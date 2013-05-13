@@ -1,0 +1,19 @@
+Installation instructions built for a Debian based OS, though they should apply to most UNIX based OSs.
+
+Steps:
+1. Install Java (If you just want to view training data and data generation this is unnecessary)
+2. Install node v0.8.2 (NOT the latest, there is a problem with the node fann bindings library)
+    -I suggest using nvm (node version manager) to do this: https://github.com/creationix/nvm
+		-DO NOT use npm to install packages, I have had to quickly modify libraries to iron out some of their bugs
+3. Installing FANN (fast artificial nueral networks):
+    -Install CMAKE so you can build FANN: http://www.cmake.org/
+    -Install FANN: http://leenissen.dk/fann/wp/download/
+        -Installation instructions here: http://leenissen.dk/fann/wp/help/installing-fann/
+4. If running "node main.js" results in an error, run 'ldconfig' (exact command may vary based on OS)
+4. If running "node main.js" still results in an error, you probably need to recompile the Node Fann bindings
+		-install node-gyp globally (using npm: npm install -g node-gyp)
+    -navigate to node_modules/node-fann
+		-run: node-gyp configure
+		-run: node-gyp build
+
+Contact me at jacob@jacobfriesen.com if these steps don't work on your machine.

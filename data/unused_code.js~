@@ -1,0 +1,16 @@
+    // Returns the return in array assigned form e.g. return x,y -> var _r = [x,y]
+    // Note: Possibly very inefficient due to the escodegen/esprima translations
+    this.encapsulateAllReturnsInArray = function(return_syntax){
+         var code = escodegen.generate(return_syntax).replace('return', '').slice(0, -1);// slice removes ';'
+                    
+        // Encapsulate all return variables in an array
+        var new_code = '';
+        _.each(code.split(','), function(item, index){
+            if (index > 0) new_code += ', ';
+            else new_code += '[';
+            new_code += item;
+        });
+        new_code += ']';
+        
+        return esprima.parse("var _r = " + new_code + ';');
+    }
