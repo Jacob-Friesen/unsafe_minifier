@@ -1,6 +1,6 @@
 var fs = require('fs');
 var util = require('util');
-var fann = require('node-fann');
+var fann = require('node_fann');
 var _ = require('underscore');
 
 var u = require('../utility_functions.js');

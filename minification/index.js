@@ -1,7 +1,7 @@
 var fs = require('fs');
 var esprima = require("esprima");
 var escodegen = require("escodegen");
-var fann = require('node-fann');
+var fann = require('node_fann');
 // For using command line
 var sys = require('sys')
 var exec = require('child_process').exec;
