@@ -8,8 +8,9 @@ lib-cov
 *.gz
 *~
 
-data/nueral_networks/
+data/nueral_networks/trained*
 data/merged_data/
+data/.
 
 pids
 logs
