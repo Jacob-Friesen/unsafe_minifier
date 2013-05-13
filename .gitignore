@@ -6,9 +6,15 @@ lib-cov
 *.out
 *.pid
 *.gz
+*~
+
+data/nueral_networks/
+data/merged_data/
 
 pids
 logs
 results
 
 npm-debug.log
+data/function_data/combined.json
+data/function_data/merge_data.json
