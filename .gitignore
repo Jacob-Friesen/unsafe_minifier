@@ -9,7 +9,7 @@ lib-cov
 *~
 
 data/nueral_networks/trained*
-data/merged_data/
+data/merged_data/*.js
 data/.
 
 pids
