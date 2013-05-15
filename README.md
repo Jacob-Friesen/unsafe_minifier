@@ -45,6 +45,7 @@ Below is an explanation of the main files and directories in this directory. Det
  * **node_modules:** Libraries that were used in my code are stored here.
  * **safe_minifier:** The YUI Compressor, yes it's in Java and no there seems to be no good well known non-Java minifiers.
  * **training:** Code to train and save the nueral networks.
+ * **tests:** Tests for all the code, can be run from the top level with: node ./tests
 
 **Files**
  * **main.js:** Central file that runs everything.
@@ -54,6 +55,20 @@ Below is an explanation of the main files and directories in this directory. Det
  * **simple_example.full.min.js:** The simple example unsafely minified and then safely minified.
  * **simple_example.safe.min.js:** The simple example just safely minified.
  * **utility_functions.js:** A bunch of functions I wrote (except the custom array remove) for use in the entire program.
+
+Testing
+=======
+**To Run:** make test 
+
+Testing has just been started so some of it is in flux. Currently using:
+
+ * **Mocha.js:** As the testing base
+ * **Chai.js:** For assertions
+ * **Sinon.js:** For stubs and mocks
+
+All parts of the code are to be tested although to different degrees. Low level code will have unit tests (in a behavioral style) like in the current utility_function.js tests. The test code is located in
+the test directory and is driven by the index.js file there. Tests are run by a Makefile which specifies
+mocha to test in a certian way.
 
 Future
 ======
