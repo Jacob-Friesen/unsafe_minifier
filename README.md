@@ -1,6 +1,6 @@
 Unsafe Minifier
 ===============
-**Note: This is a prototype, the code quality and test converage will significantly increase as I move away from the prototype.**
+**Note: This is a prototype, the code quality and test coverage will significantly increase as I move away from the prototype.**
 
 Welcome to the world's first unsafe minifier (at least I think). Unlike traditional (safe) minifiers this minifier attempts to modify the flow of code but not the fundamental function of the code. It is important to note that due to the inclusion of AI, this minification technique will probably never be 100% accurate on choosing what should be minified. Although, over time I intend to get the accuracy about 90%. Finally, this minifer is intented to be used in combination with safe minification to provide levels of minification not possible by safe minification alone.
 
@@ -10,7 +10,7 @@ The code currently runs as a CLI accepting a file to be minified, outputting fou
  * file\_name.full.min.js: File unsafely minified
 These four outputs should give a clear picture of the limits and potential of the current version of unsafe minification. Additonally, I have included a simple file in the top directory of the project demonstrating an optimal case of minification.
 
-More details about the code structure and function can be found in README.txt. Additionally, installation instructions are listed in install.txt. Finally, an analysis and summary of the decisions made can be found in Report.pdf.
+An analysis and summary of the decisions made can be found in Report.pdf.
 
 Installation
 ============
