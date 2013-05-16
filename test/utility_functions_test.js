@@ -1,20 +1,11 @@
 var chai = require('chai'),
-    sinon = require('sinon'),// mocks and stubs
     assert = chai.assert,
-    expect = chai.expect,
-    should = chai.should();
+    expect = chai.expect;
 
 var u = require('../utility_functions');
 module.exports = function(){ 
 
 	describe('utility_functions', function() {
-		// Make sure the tester is running
-		describe('#test_initialization()', function() {
-			it('should be true', function() {
-	            assert.equal(1, 1);
-	        })
-		});
-
 		// Unlikely this will fail, but it is a good idea to include it for testing reasons.
 		describe('#Array.prototype.remove()', function() {
 			var arr = [];

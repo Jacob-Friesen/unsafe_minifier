@@ -3,8 +3,8 @@ var _ = require('underscore');
 var u = require('../utility_functions.js');
 
 // Handles moving returns in code, yes it really is this complicated.
-module.exports = function returnHandler(){
-    
+module.exports = function ReturnHandler(){
+
     // Moves mergeFroms return statement to the end of mergeTo but saves the return values at the end of the
     // normal body insertion. Does this by assigning all return values to array values then returning those
     // at the end. Returns boolean for if both functions have return values
@@ -49,7 +49,6 @@ module.exports = function returnHandler(){
             else{
                 elements = [toLast.argument];
                 this.addFromElements(fromLast, elements)
-                //console.log(elements);
             }
                 
             new_return.argument = {
@@ -64,20 +63,26 @@ module.exports = function returnHandler(){
         return {new_return: new_return, toHasReturn: toHasReturn};
     }
     
-    // Adds all the elements of the argue from the specified item and returns the new elements array
-    this.addFromElements = function(fromLast, elements){
-        if (u.hasOwnPropertyChain(fromLast, 'argument', 'elements'))
-            _.each(fromLast.argument.elements, function(element){
-                elements.unshift(element);
-            });
-        else if (u.hasOwnPropertyChain(fromLast, 'argument', 'expressions')){
-            _.each(fromLast.argument.expressions.reverse(), function(element){
-                elements.unshift(element);
-            });
-            fromLast.argument.expressions.reverse();
+    // Adds all the elements of the arguments from item and returns the elements array with those arguments appended
+    this.addFromElementsError = 'Elements to add to was null or undefined.';
+    this.addFromElements = function(item, elements){
+        if (u.nullOrUndefined(elements))
+            throw(this.addFromElementsError);
+
+        if (!_.isEmpty(item)){
+            if (u.hasOwnPropertyChain(item, 'argument', 'elements'))
+                _.each(item.argument.elements, function(element){
+                    elements.unshift(element);
+                });
+            else if (u.hasOwnPropertyChain(item, 'argument', 'expressions')){
+                _.each(item.argument.expressions.reverse(), function(element){
+                    elements.unshift(element);
+                });
+                item.argument.expressions.reverse();
+            }
+            else
+                elements.unshift(item.argument);
         }
-        else
-            elements.unshift(fromLast.argument);
             
         return elements;
     }

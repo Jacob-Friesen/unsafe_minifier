@@ -3,7 +3,7 @@
  **/
 
 module.exports = (function(){
-    var context = this;
+    var _this = this;
     
     // Array Remove - By John Resig (MIT Licensed), modified with a too high and too low checker
     // Note: delete arr[index] leaves undefined elements in the array, no shifting is done. Hence why this is needed.
@@ -26,7 +26,7 @@ module.exports = (function(){
     // Check if item is null then if it has property, then check if its null, then check next property etc. Arguments must be in string form.
     this.hasOwnPropertyChain = function(item /*variable length arguments*/){
         if (!arguments.length) return true;
-        if (context.nullOrUndefined(item)) return false;
+        if (_this.nullOrUndefined(item)) return false;
 
         if (arguments.length < 2) return true;
         
@@ -47,19 +47,15 @@ module.exports = (function(){
     // into a singular object, this is what is returned.
     this.fileErrorMessage = 'The file could not be parsed:\n';
     this.getJSONFile = function(file){
-        if (context.nullOrUndefined(file)) return null;
+        if (_this.nullOrUndefined(file)) return null;
 
         if (file[file.length - 1] == ',') file = file.slice(0, -1);
         if (file[file.length - 2] == ',') file = file.slice(0, -2);
         try {
             var arrays = JSON.parse('[' + file + ']');
         } catch (e) {
-            throw(context.fileErrorMessage + file);
+            throw(_this.fileErrorMessage + file);
         }
-        console.log('file');
-        console.log(file);
-        console.log('arrays')
-        console.log(arrays)
         
         // merge the arrays
         toReturn = [];
