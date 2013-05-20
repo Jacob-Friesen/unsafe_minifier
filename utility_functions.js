@@ -1,6 +1,7 @@
 /*
  * This is a set of functions and object modifications that are unrelated to anything and are used in a wide variety of contexts.
  **/
+var _ = require('lodash');
 
 module.exports = (function(){
     var _this = this;
@@ -21,6 +22,12 @@ module.exports = (function(){
     
     this.nullOrUndefined = function(item){
         return typeof item === 'undefined' || item === null;
+    }
+
+    // Returns if object is null/undefined/empty (enu)
+    this.enu = function(item){
+        var undef = _this.nullOrUndefined(item);
+        return (!undef) ? _.isEmpty(item) : undef;
     }
         
     // Check if item is null then if it has property, then check if its null, then check next property etc. Arguments must be in string form.

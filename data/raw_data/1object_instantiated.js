@@ -70,11 +70,11 @@ var a = {
         y * y;
     },
 
-		tryIt: function(v,w){
-				a.f5(v);
-				var b = a.outObjectMergeNoReturnsWithA(w);
-				// var b = a.outObjectMergeNoReturnsWithA(v, w);
-		}
+        tryIt: function(v,w){
+                a.f5(v);
+                var b = a.outObjectMergeNoReturnsWithA(w);
+                // var b = a.outObjectMergeNoReturnsWithA(v, w);
+        }
 }
 // (enough lines away, so as not to cause a double merge)
 //
@@ -90,11 +90,11 @@ var a = {
         y * y;
     },
 
-		tryIt: function(v,w){
-				this.f6(v);
-				this.outObjectMergeNoReturnsWithThis(w);
-				// var b = this.outObjectMergeNoReturnsWithThis(v, w);
-		}
+        tryIt: function(v,w){
+                this.f6(v);
+                this.outObjectMergeNoReturnsWithThis(w);
+                // var b = this.outObjectMergeNoReturnsWithThis(v, w);
+        }
 }
 // (enough lines away, so as not to cause a double merge)
 //
@@ -110,11 +110,11 @@ var a = {
         return y * y;
     },
 
-		tryIt: function(v,w){
-				this.f7(v);
-				var a = this.outObjectToReturnMerge(w);
-				// var a = this.outObjectToReturnMerge(v, w);
-		}
+        tryIt: function(v,w){
+                this.f7(v);
+                var a = this.outObjectToReturnMerge(w);
+                // var a = this.outObjectToReturnMerge(v, w);
+        }
 }
 // (enough lines away, so as not to cause a double merge)
 //
@@ -126,15 +126,15 @@ var a = {
         return x + x;
     },
     
-   	outObjectFromReturnMerge: function(y){
+    outObjectFromReturnMerge: function(y){
         y * y;
     },
 
-		tryIt: function(v,w){
-				this.f8(v);
-				var a = this.outObjectFromReturnMerge(w);
-				// var a = this.outObjectFromReturnMerge(v, w);
-		}
+        tryIt: function(v,w){
+                this.f8(v);
+                var a = this.outObjectFromReturnMerge(w);
+                // var a = this.outObjectFromReturnMerge(v, w);
+        }
 }
 // (enough lines away, so as not to cause a double merge)
 //
@@ -146,17 +146,17 @@ var a = {
         return x + x;
     },
     
-   	outObjectBothReturnMerge: function(y){
+    outObjectBothReturnMerge: function(y){
         return y * y;
     },
 
-		tryIt: function(v,w){
-				var a = this.f9(v);
-				var b = this.outObjectBothReturnMerge(w);
-				// var _r = this.outObjectBothReturnMerge(v, w);
+        tryIt: function(v,w){
+                var a = this.f9(v);
+                var b = this.outObjectBothReturnMerge(w);
+                // var _r = this.outObjectBothReturnMerge(v, w);
         // var a = _r[0];
         // var b = _r[1];
-		}
+        }
 }
 // (enough lines away, so as not to cause a double merge)
 //

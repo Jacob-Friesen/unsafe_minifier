@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 
 var u = require('../utility_functions.js');
 var MergeFunction = require('./merge_function.js');

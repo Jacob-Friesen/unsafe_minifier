@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var esprima = require("esprima");
 var escodegen = require("escodegen");
 
@@ -180,7 +180,7 @@ module.exports = function mergeFunction(){
                 // Combine return statements if necessary
                 var last = _.last(mergeFrom.data.body.body)
                 if (u.hasOwnPropertyChain(last, 'type') && last.type === 'ReturnStatement')
-                    twoReturns = this.returnHandler.moveReturns(mergeTo.data.body.body,  mergeFrom.data.body.body,  mergeFrom.data.body);
+                    twoReturns = this.returnHandler.moveReturns(mergeTo.data.body,  mergeFrom.data.body);
                 else
                     mergeTo.data.body.body.unshift(toInsert);
             }

@@ -1,86 +1,94 @@
-var _ = require('underscore');
+var _ = require('lodash');
 
 var u = require('../utility_functions.js');
 
 // Handles moving returns in code, yes it really is this complicated.
 module.exports = function ReturnHandler(){
 
-    // Moves mergeFroms return statement to the end of mergeTo but saves the return values at the end of the
-    // normal body insertion. Does this by assigning all return values to array values then returning those
-    // at the end. Returns boolean for if both functions have return values
-    this.moveReturns = function(mergeToBody, mergeFromBody, mergeFromEncapsulatingBody){
-        var fromLast = _.last(mergeFromBody);
-        
-        // Insert old data with last part (the original return) removed before the rest of the mergeTo
-        // function contents if its not empty.
-        mergeFromBody.pop();
-        if (mergeFromBody.length > 0)
-            mergeToBody.unshift(mergeFromEncapsulatingBody);
+    // Takes 2 function bodies. Moves mergeFroms return statement to the end of mergeTo but saves the return values at the end of the normal body
+    // insertion. Does this by assigning all return values to array values then returning those at the end. Then mergeFrom's body without a return is
+    // copied before all of merge to's body. Returns true for if both functions have return values.
+    this.moveReturns = function(to, from){
+        var bothHaveReturns = false;
+        if (!u.enu(to) && !u.enu(from)){
+            var fromLast = _.last(from.body);
             
-        // Generate a new return by merging to and from returns if necessary and deleting the old to return
-        // if necessary. Then add the new return at the end.
-        var r = this.generateNewReturn(fromLast, _.last(mergeToBody));
-        if (r.toHasReturn)
-            mergeToBody.pop();
-        mergeToBody.push(r.new_return);
+            // Insert old data with last part (the original return) removed before the rest of the mergeTo function contents if its not empty.
+            from.body.pop();
+            if (from.body.length > 0)
+                to.body.unshift(from);
+                
+            // Generate a new return by merging to and from returns if necessary and deleting the old to return if necessary. Then add the new return at
+            // the end. Make sure any loc values from copied returns are retained.
+            var r = this.generateNewReturn(_.last(to.body), fromLast);
+            if (r.returnInTo){
+                r.newReturn.loc = _.last(to.body).loc;
+                to.body.pop();
+            }
+            else
+                r.newReturn.loc = fromLast.loc;
+            to.body.push(r.newReturn);
+
+            if (r.returnInTo && u.hasOwnPropertyChain(fromLast, 'argument'))
+                bothHaveReturns = true;
+        }
         
-        return r.toHasReturn;
+        return bothHaveReturns;
     }
     
-    // Generates a new return given the mergeFrom and mergeTo return statements. Returns generated return and
-    // if the merging to function has a return statement.
-    this.generateNewReturn = function(fromLast, toLast){
-        var toHasReturn = false;
-        var new_return = {
+    // Generates a new return given the two return bodies. Returns the new return and if the merging to return has a return statement in object:
+    //     {newReturn: <the generated return>
+    //      returnInTo: <if the second function body had a return>}
+    this.generateNewReturn = function(to, from){
+        var returnInTo = false;
+        var newReturn = {
             type: "ReturnStatement",
             argument: {}
         }
         
         // Merge return values if both from and to both have return statements
-        if (u.hasOwnPropertyChain(toLast, 'argument', 'type')){
-            toHasReturn = true;
+        if (!u.enu(to) && u.hasOwnPropertyChain(to, 'argument')){
+            returnInTo = true;
             
             // Deal with toLast having an array of returns (already merged to it)
-            var elements = []
-            if (u.hasOwnPropertyChain(toLast, 'argument', 'elements')){
-                elements = toLast.argument.elements;
-                this.addFromElements(fromLast, elements)
+            var elements = [];
+            if (u.hasOwnPropertyChain(to, 'argument', 'elements')){
+                // Deep copy of toLast to ensure it is not modified by adding to elements
+                elements = _.cloneDeep(to.argument.elements);
+                elements = this.addArgsToElements(from, elements);
             }
             else{
-                elements = [toLast.argument];
-                this.addFromElements(fromLast, elements)
+                elements = [to.argument];
+                elements = this.addArgsToElements(from, elements);
             }
                 
-            new_return.argument = {
+            newReturn.argument = {
                 "type": "ArrayExpression",
                 "elements": elements
             }
         }
-        // Create a new return just for the merging from function
-        else
-            new_return.argument = fromLast.argument;
+        // If the second return cannot work give the return the first functions argument
+        else if(!u.enu(from))
+            newReturn.argument = from.argument;
         
-        return {new_return: new_return, toHasReturn: toHasReturn};
+        return {newReturn: newReturn, returnInTo: returnInTo};
     }
     
-    // Adds all the elements of the arguments from item and returns the elements array with those arguments appended
-    this.addFromElementsError = 'Elements to add to was null or undefined.';
-    this.addFromElements = function(item, elements){
+    // Adds all the elements of the arguments from item to the arguments in the elements list. Returns the elements list with those arguments appended
+    // at the beginning.
+    this.addArgsToElementsError = 'Elements to add to was null or undefined.';
+    this.addArgsToElements = function(item, elements){
         if (u.nullOrUndefined(elements))
-            throw(this.addFromElementsError);
+            throw(this.addArgsToElementsError);
 
         if (!_.isEmpty(item)){
-            if (u.hasOwnPropertyChain(item, 'argument', 'elements'))
-                _.each(item.argument.elements, function(element){
+            if (u.hasOwnPropertyChain(item, 'argument', 'elements')){
+                item.argument.elements.reverse().forEach(function(element){
                     elements.unshift(element);
                 });
-            else if (u.hasOwnPropertyChain(item, 'argument', 'expressions')){
-                _.each(item.argument.expressions.reverse(), function(element){
-                    elements.unshift(element);
-                });
-                item.argument.expressions.reverse();
+                item.argument.elements.reverse();// reverse is an in place modifier so must reset state
             }
-            else
+            else if (u.hasOwnPropertyChain(item, 'argument'))
                 elements.unshift(item.argument);
         }
             

@@ -1,7 +1,7 @@
 var fs = require('fs');
 var util = require('util');
 var fann = require('node_fann');
-var _ = require('underscore');
+var _ = require('lodash');
 
 var u = require('../utility_functions.js');
 var NueralNetwork = require('./nueral_network.js');

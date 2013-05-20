@@ -1,7 +1,7 @@
 var fs = require('fs');
 var esprima = require("esprima");
 var escodegen = require("escodegen");
-var _ = require('underscore');
+var _ = require('lodash');
 
 var mergeFunctions = require('../AST_modification/merge_functions');
 var u = require('../utility_functions.js');

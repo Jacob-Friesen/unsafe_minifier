@@ -1,11 +1,11 @@
 function piIt(value){
-		return Math.PI * value;
+    return Math.PI * value;
 }
 
 function loopIncrement(value, times){
-		for (var i; i < times; i++)
-				value += 1;
-		return value;
+    for (var i; i < times; i++)
+            value += 1;
+    return value;
 }
 
 var a = piIt(2);
@@ -16,13 +16,13 @@ var b = loopIncrement(0, 10);
 
 
 Array.prototype.piThis = function(){
-		for (var i = 0; i < this.length; i++)
-				this[i] = Math.PI * this[i];
+    for (var i = 0; i < this.length; i++)
+        this[i] = Math.PI * this[i];
 }
 
 Array.prototype.initTo = function(value){
-		for (var i = 0; i < this.length; i++)
-				this[i] = value;
+    for (var i = 0; i < this.length; i++)
+        this[i] = value;
 }
 
 var arr = [1,2];
@@ -89,8 +89,3 @@ var d = this.getJSONFile('{}');
 //var _r = this.getJSONFile(a, 'b', '{}');
 //var c = _r[0];
 //var d = _r[1];
-
-
-
-
-
