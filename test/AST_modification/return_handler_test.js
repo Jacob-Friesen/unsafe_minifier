@@ -12,7 +12,6 @@ module.exports = function(){
             resetTestData();
         });
 
-        // Make sure the tester is running
         describe('#addArgsToElements()', function() {
             it('should throw an error when the elements argument is null or undefined', function() {
                 (function run(arg1, arg2){

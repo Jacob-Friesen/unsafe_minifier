@@ -7,8 +7,9 @@ var ReturnHandler = require('./return_handler.js');
 
 // Merges two function calls together, will also merge the corresponding function bodies.
 module.exports = function mergeFunction(){
-    var merges = [];// List of merged functions in string form, used to check if I am adding a duplicate function body
     var mergeName = null;// Tracks the current merge name for above
+    var merges = [];// List of merged functions in string form, used to check if I am adding a duplicate function body
+    this.merges = merges;
     this.returnHandler = new ReturnHandler();
     
     
