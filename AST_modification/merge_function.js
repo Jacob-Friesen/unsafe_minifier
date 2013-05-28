@@ -236,21 +236,20 @@ module.exports = function mergeFunction(){
         return true;
     }
     
-    this.removeFromParentArray = function(toRemove, parent){
-        _.each(parent, function(item, index){
+    // Finds the item to delete and removes that item from the parent. (Always returns true)
+    this.removeFromParentArray = function(toRemove, parentArray){
+        _.each(parentArray, function(item, index){
             if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && u.hasOwnPropertyChain(toRemove, 'loc', 'start', 'line')
                 && item.loc.start.line === toRemove.loc.start.line){
-                parent.remove(index);
+                parentArray.remove(index);
                 return true;
             }
-            return true;
+            return true;// Be consistent, if each loop has a return everything must
         });
         
         return true;
     }
     
-    // Each time a merge from to pattern is added to the merges list in string form after the merging has been done. So this checks if the contents
-    // of one function have already been moved into another.
     this.isDuplicateInsert = function(){
         return _.contains(merges, mergeName);
     }
