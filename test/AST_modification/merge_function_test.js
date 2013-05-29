@@ -5,8 +5,9 @@ var _ = require('lodash'),
     assert = chai.assert,
     expect = chai.expect;
 
-var MergeFunction = require('../../AST_modification/merge_function.js');
-var mergeFunction = MergeFunction;
+var MergeFunction = require('../../AST_modification/merge_function.js'),
+    AST_structure = require('../../AST_modification/AST_structures.js'),
+    mergeFunction = MergeFunction;
 module.exports = function(){
     describe('mergeFunction', function() {
         afterEach(function(){
@@ -108,12 +109,84 @@ module.exports = function(){
                 assert.isTrue(_.isEqual(test.parentArray, [test.callExpression2]));
             });
 
-            it('should remove the item when it\'s line number is the same as one of the parents and leave an empty parent, when the parent has one item', function(){
+            it('should remove the item when it\'s line number is the same as one of the parents and when the parent has one item', function(){
                 var singleParent = [test.callExpression2];
                 assert.isTrue(mergeFunction.removeFromParentArray(test.callExpression2, singleParent));
                 assert.isTrue(_.isEmpty(singleParent));
             });
 
+        });
+
+        describe('#removeFromParent()', function() {
+            it('should do nothing when ENUs are sent in', function() {
+                (function remove(item, parent){
+                    assert.isTrue(mergeFunction.removeFromParent(item, parent));
+                    return remove;
+                })()({})({}, null)({}, {})({}, [])(null)(null, null)(null, {})(null, []);
+            });
+
+            function arrayNothingTest(array){
+                var _array = _.cloneDeep(array);
+
+                assert.isTrue(mergeFunction.removeFromParent(test.callExpression1, array));
+                assert.isTrue(_.isEqual(array, _array));
+            }
+
+            function arrayRemoveTest(array){
+                assert.isTrue(mergeFunction.removeFromParent(test.callExpression2, array));
+
+                array[0] = array[0] || array.body[0];
+                assert.isTrue(_.isEqual(array[0], test.emptyFunctionExpression));
+            }
+
+            function arrayEmptyRemoveTest(array){
+                assert.isTrue(mergeFunction.removeFromParent(test.callExpression2, array));
+                assert.isTrue(mergeFunction.removeFromParent(test.emptyFunctionExpression, array));
+
+                array[0] = array[0] || array.body[0];
+                assert.isTrue(_.isEqual(array[0], AST_structure.emptyBlockStatement));
+            }
+
+            // A little repetitive, but metaprogramming to make these 6 more DRY would be overkill
+            describe('parent is an array', function(){
+                it('should remove nothing when the specified item is not in the parent', function() {
+                    arrayNothingTest(test.fullItem1.parent);
+                });
+
+                it('should remove the specified item when the parent has length > 1', function() {
+                    arrayRemoveTest(test.fullItem1.parent);
+                });
+
+                it('should remove the specified item when the parent has length < 1 and insert and empty element', function() {
+                    arrayEmptyRemoveTest(test.fullItem1.parent)
+                });
+            });
+
+            describe('parent is an object containing a body property that is an array', function(){
+                it('should remove nothing when the specified item is not in the parent', function() {
+                    arrayNothingTest(test.fullItem2.parent);
+                });
+
+                it('should remove the specified item when the parent has length > 1', function() {
+                    arrayRemoveTest(test.fullItem2.parent);
+                });
+
+                it('should remove the specified item when the parent has length < 1 and insert and empty element', function() {
+                    arrayEmptyRemoveTest(test.fullItem1.parent)
+                });
+            });
+
+            it('should do nothing if the item does not exist in the parent and the parent is an expression', function() {
+                var expressionParent = _.cloneDeep(test.expressionParent);
+
+                assert.isTrue(mergeFunction.removeFromParent(test.callExpression2, test.expressionParent));
+                assert.isTrue(_.isEqual(test.expressionParent, expressionParent));
+            });
+
+            it('should make the parents right part null if the item exists in the parent and the parent is an expression', function() {
+                assert.isTrue(mergeFunction.removeFromParent(test.emptyFunctionExpression, test.expressionParent));
+                assert.isTrue(_.isEqual(test.expressionParent.expression.right, AST_structure.nullLiteral));
+            });
         });
     });
 }
@@ -123,6 +196,7 @@ var test = {};
 var resetTestData = (function reset(){
     test = {};
 
+    // Used for removeFromParentArray tests and to build removeFromParent tests
     test.loc1 = { 
         start: { line: 145, column: 8 },
         end: { line: 147, column: 5 }  
@@ -204,4 +278,49 @@ var resetTestData = (function reset(){
         test.emptyFunctionExpression,
         test.callExpression2
     ]
+
+    // Used to build removeFromParent tests
+    test.blockBodyParent = {
+        type: 'BlockStatement',
+        body: test.parentArray,
+        loc: test.loc3
+    }
+
+    test.fullItem1 = {
+        data: test.callExpression2,
+        parent: test.parentArray
+        // there is more properties but they are irrelevant
+    }
+
+    test.fullItem2 = {
+        data: test.emptyFunctionExpression,
+        parent: test.blockBodyParent
+        // there is more properties but they are irrelevant
+    }
+
+    test.expressionParent = { 
+        type: 'ExpressionStatement',
+        expression: { 
+            type: 'AssignmentExpression',
+            operator: '=',
+            left: { 
+                type: 'MemberExpression',
+                computed: false,
+                object: {
+                    type: 'Identifier',
+                    name: 'a',
+                    loc: test.loc3
+                },
+                property: { 
+                    type: 'Identifier',
+                    name: 'name',
+                    loc: test.loc3 
+                },
+                loc: test.loc3
+            },
+            right: test.emptyFunctionExpression,
+            loc: test.loc3
+        },
+        loc: test.loc3 
+    }
 });

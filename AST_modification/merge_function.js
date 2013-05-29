@@ -1,9 +1,10 @@
-var _ = require('lodash');
-var esprima = require("esprima");
-var escodegen = require("escodegen");
+var _ = require('lodash'),
+    esprima = require("esprima"),
+    escodegen = require("escodegen");
 
-var u = require('../utility_functions.js');
-var ReturnHandler = require('./return_handler.js');
+var u = require('../utility_functions.js'),
+    ReturnHandler = require('./return_handler.js'),
+    AST_structure = require('./AST_structures.js');
 
 // Merges two function calls together, will also merge the corresponding function bodies.
 module.exports = function mergeFunction(){
@@ -89,7 +90,7 @@ module.exports = function mergeFunction(){
         }
         
         // 4. Remove from function call
-        if (removeFrom) this.removeItemFromParent(mergeFrom, mergeTo);
+        if (removeFrom) this.removeFromParent(mergeFrom.data, mergeFrom.parent);
         
         return true;
     }
@@ -190,48 +191,36 @@ module.exports = function mergeFunction(){
             throw("Error: Second function body could not be copied into the first");
         
         // 3. Delete second function declaration
-        this.removeItemFromParent(mergeFrom, mergeTo);
+        this.removeFromParent(mergeFrom.data, mergeFrom.parent);
         
         return twoReturns;
     }
     
     // Removes item from its parent or make the item equivalent to removed when it can't be removed. For example when the item to remove the first
-    // part of an if, copy the second part to the first and erase the first part.
-    this.removeItemFromParent = function(mergeFrom, mergeTo){
+    // part of an if, copy the second part to the first and erase the first part. (Always returns true)
+    // Note: parent is modified
+    this.removeFromParent = function(item, parent){
+        if (u.enu(item) || u.enu(parent))
+            return true;
+
+        var parent = (_.isArray(parent.body)) ? parent.body : parent;
+        if (u.enu(parent))
+            return true;
+
         // mergeFrom.nameInParent cannot reliably be taken as the correct index because the index could get changed as items are deleted in the
         // parent by previous call merges.
-        if (_.isArray(mergeFrom.parent) ){
-            this.removeFromParentArray(mergeFrom.data, mergeFrom.parent);
+        if (_.isArray(parent)){
+            this.removeFromParentArray(item, parent);
             
             // If there is an empty array, I must put something there instead like a {}
-            if (mergeFrom.parent.length === 0){
-                mergeFrom.parent.push({
-                    type: "BlockStatement",
-                    body: []
-                });
-            }
+            if (parent.length === 0)
+                parent.push(AST_structure.emptyBlockStatement);
         }
-        // If an if statement must make item null not remove it due to how ifs are parsed
-        else if (u.hasOwnPropertyChain(mergeTo.parent, 'type') && mergeTo.parent.type === 'IfStatement'){
-            // Make sure that there isn't a lone else statement
-            if (mergeFrom.nameInParent === 'consequent'){
-                mergeFrom.parent['consequent'] = mergeFrom.parent['alternate'];
-                mergeFrom.parent['alternate'] = null;
-            }
-            else if (mergeFrom.nameInParent === 'alternate')
-                mergeFrom.parent[mergeFrom.nameInParent] = null;
-            // If it's a 'test' (the x of the if (x) part) don't remove it.
+        // Can't get the parent of the expression statement, but can still make function expression null if the item is to be deleted
+        else if (u.hasOwnPropertyChain(parent, 'type') && parent.type === 'ExpressionStatement'){
+            if (item.loc.start.line === parent.expression.right.loc.start.line)
+                parent.expression.right = AST_structure.nullLiteral;
         }
-        // Can't get the parent of the expression statement, but can still make function null
-        else if (u.hasOwnPropertyChain(mergeFrom.parent, 'type') && mergeFrom.parent.type === 'ExpressionStatement'){
-            mergeFrom.parent.expression.right = {
-                "type": "Literal",
-                "value": null,
-                "raw": "null"
-            }
-        }
-        else if (mergeFrom.nameInParent === 'body')
-            this.removeFromParentArray(mergeFrom.data, mergeFrom.parent.body);
             
         return true;
     }
@@ -244,7 +233,7 @@ module.exports = function mergeFunction(){
                 parentArray.remove(index);
                 return true;
             }
-            return true;// Be consistent, if each loop has a return everything must
+            return true;// Be consistent, if each loop has a return everything must return
         });
         
         return true;

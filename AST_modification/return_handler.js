@@ -1,6 +1,7 @@
 var _ = require('lodash');
 
-var u = require('../utility_functions.js');
+var u = require('../utility_functions.js'),
+    AST_structure = require('./AST_structures.js');
 
 // Handles moving returns in code, yes it really is this complicated.
 module.exports = function ReturnHandler(){
@@ -41,10 +42,7 @@ module.exports = function ReturnHandler(){
     //      returnInTo: <if the second function body had a return>}
     this.generateNewReturn = function(to, from){
         var returnInTo = false;
-        var newReturn = {
-            type: "ReturnStatement",
-            argument: {}
-        }
+        var newReturn = AST_structure.emptyReturn;
         
         // Merge return values if both from and to both have return statements
         if (!u.enu(to) && u.hasOwnPropertyChain(to, 'argument')){
@@ -62,10 +60,8 @@ module.exports = function ReturnHandler(){
                 elements = this.addArgsToElements(from, elements);
             }
                 
-            newReturn.argument = {
-                "type": "ArrayExpression",
-                "elements": elements
-            }
+            AST_structure.argumentTemplate.elements = elements;
+            newReturn.argument = AST_structure.argumentTemplate;
         }
         // If the second return cannot work give the return the first functions argument
         else if(!u.enu(from))

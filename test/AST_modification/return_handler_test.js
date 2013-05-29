@@ -4,7 +4,9 @@ var _ = require('lodash'),
     expect = chai.expect;
 
 // ENU = empty/undefined/null
-var returnHandler = require('../../AST_modification/return_handler.js')();
+var returnHandler = require('../../AST_modification/return_handler.js')(),
+    AST_structure = require('../../AST_modification/AST_structures.js');
+
 module.exports = function(){
 
     describe('returnHandler', function() {
@@ -57,15 +59,8 @@ module.exports = function(){
             }
 
             beforeEach(function(){
-                test.returnTemplate = {
-                    type: "ReturnStatement",
-                    argument: {}
-                };
-
-                test.argumentTemplate = {
-                    "type": "ArrayExpression",
-                    "elements": {}
-                };
+                test.returnTemplate = AST_structure.emptyReturn;
+                test.argumentTemplate = AST_structure.argumentTemplate;
             });
 
             it('should return an object with an empty return and indication of no 2nd return, when given 2 ENU returns', function(){
