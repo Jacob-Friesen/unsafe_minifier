@@ -73,3 +73,5 @@ var flagToFunction = {
                 }, process.argv[4]);
         }, process.argv[3]);
 })();
+
+module.exports = generateTestData;

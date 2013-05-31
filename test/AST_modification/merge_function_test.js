@@ -8,10 +8,14 @@ var _ = require('lodash'),
 var MergeFunction = require('../../AST_modification/merge_function.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     mergeFunction = MergeFunction;
-module.exports = function(){
+module.exports = function(callback){
     describe('mergeFunction', function() {
         afterEach(function(){
             resetTestData();
+        });
+
+        after(function(){
+            callback();
         });
         
         describe('#isDuplicateInsert()', function() {
@@ -323,4 +327,6 @@ var resetTestData = (function reset(){
         },
         loc: test.loc3 
     }
-});
+    
+    return reset;
+})();

@@ -3,9 +3,13 @@ var chai = require('chai'),
     expect = chai.expect;
 
 var u = require('../utility_functions');
-module.exports = function(){ 
+module.exports = function(callback){ 
 
     describe('utility_functions', function() {
+        after(function(){
+            callback();
+        });
+
         // Unlikely this will fail, but it is a good idea to include it for testing reasons.
         describe('#Array.prototype.remove()', function() {
             var arr = [];

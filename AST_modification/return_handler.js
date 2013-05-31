@@ -42,7 +42,7 @@ module.exports = function ReturnHandler(){
     //      returnInTo: <if the second function body had a return>}
     this.generateNewReturn = function(to, from){
         var returnInTo = false;
-        var newReturn = AST_structure.emptyReturn;
+        var newReturn = _.cloneDeep(AST_structure.emptyReturn);// Make sure data isn't shared between runs
         
         // Merge return values if both from and to both have return statements
         if (!u.enu(to) && u.hasOwnPropertyChain(to, 'argument')){
@@ -60,8 +60,9 @@ module.exports = function ReturnHandler(){
                 elements = this.addArgsToElements(from, elements);
             }
                 
-            AST_structure.argumentTemplate.elements = elements;
-            newReturn.argument = AST_structure.argumentTemplate;
+            var argumentTemplate = _.cloneDeep(AST_structure.argumentTemplate);// Make sure data isn't shared between runs
+            argumentTemplate.elements = elements;
+            newReturn.argument = argumentTemplate;
         }
         // If the second return cannot work give the return the first functions argument
         else if(!u.enu(from))

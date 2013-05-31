@@ -7,13 +7,11 @@ module.exports = (function(){
     var _this = this;
 
     // modified from http://javascript.crockford.com/prototypal.html
-    if (typeof Object.nu !== 'function') {
-        Object.nu = function (o) {
-            function F() {};
-            F.prototype = o;
-            return new F();
-        };
-    } else { throw("Object.nu is already defined"); }
+    Object.nu = function (o) {
+        function F() {};
+        F.prototype = o;
+        return new F();
+    };
     
     // Array Remove - By John Resig (MIT Licensed), modified with a too high and too low checker
     // Note: delete arr[index] leaves undefined elements in the array, no shifting is done. Hence why this is needed.

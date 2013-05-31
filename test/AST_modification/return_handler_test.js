@@ -7,11 +7,15 @@ var _ = require('lodash'),
 var returnHandler = require('../../AST_modification/return_handler.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js');
 
-module.exports = function(){
+module.exports = function(callback){
 
     describe('returnHandler', function() {
         afterEach(function(){
             resetTestData();
+        });
+
+        after(function(){
+            callback();
         });
 
         describe('#addArgsToElements()', function() {

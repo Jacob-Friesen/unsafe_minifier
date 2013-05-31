@@ -49,9 +49,11 @@ module.exports = function functionStatistics(){
             toWrite = JSON.stringify(functionStatistics) + ",";
         
         // Append derived contents to the end of the specified file
-        fs.appendFile(toFile, toWrite, function (err) {
-            if (err) throw err;
-        });
+        if (toFile){
+            fs.appendFile(toFile, toWrite, function (err) {
+                if (err) throw err;
+            });
+        }
     }
     
     return this;

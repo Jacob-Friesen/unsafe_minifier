@@ -20,7 +20,7 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
     
     // Generate the data and put it in the specified output file, sets this.AST to the new AST. Also, clears all files specified in files that are
     // specified to be cleared in main.
-    this.generateData = function(callback){
+    this.generateData = function(callback, filenames){
         // Clear all files in files, also makes new_file object equal to each file[0]
         var new_files = {};
         for (file in files){
@@ -29,12 +29,14 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
         }
         
         // Get list of files to work with
-        var filenames = fs.readdirSync(rawDataDirectory);
-            filenames = _.reject(filenames, function(name){ return name.slice(-1) === '~' });// Remove temporary files
+        if (!filenames){
+            var filenames = fs.readdirSync(rawDataDirectory);
+                filenames = _.reject(filenames, function(name){ return name.slice(-1) === '~' });// Remove temporary files
+        }
         
         // Load each file and perform merge operations on it
         var merges = 0;
-        _.each(filenames, function(file, index){
+        filenames.forEach(function(file, index){
             fs.readFile(rawDataDirectory + "/" + file, 'utf8', function (err, data) {
                 if (err) throw err;
                 
@@ -48,7 +50,7 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
                     });
                 }, null, PRINT_MERGES);
             });
-        })
+        });
     }
     
     // Write the modified AST results
@@ -61,6 +63,9 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
     
     // Merges the functions stats with the validation data and writes to the specified combined file
     this.mergeStatsWithValidation = function(callback){
+        if (!files.mergeData || !files.mergeData[0])
+            return callback();
+
         fs.readFile(files.mergeData[0], 'utf8', function (err, functionData) {
             if (err) throw err;
             
