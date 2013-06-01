@@ -5,9 +5,10 @@ Unsafe Minifier
 Welcome to the world's first unsafe minifier (at least I think). Unlike traditional (safe) minifiers this minifier attempts to modify the flow of code but not the fundamental function of the code. It is important to note that due to the inclusion of AI, this minification technique will probably never be 100% accurate on choosing what should be minified. Although, over time I intend to get the accuracy about 90%. Finally, this minifer is intented to be used in combination with safe minification to provide levels of minification not possible by safe minification alone.
 
 The code currently runs as a CLI accepting a file to be minified, outputting four files:
- * file\_name.safe.min.js: File minified just by the traditional minifier (YUI)
- * file\_name.min.js: File unsafely minified
- * file\_name.full.min.js: File unsafely minified
+ * **file\_name.safe.min.js:** File minified just by the traditional minifier (YUI).
+ * **file\_name.min.js:** File unsafely minified.
+ * **file\_name.full.min.js:** File unsafely minified.
+
 These four outputs should give a clear picture of the limits and potential of the current version of unsafe minification. Additonally, I have included a simple file in the top directory of the project demonstrating an optimal case of minification.
 
 An analysis and summary of the decisions made can be found in Report.pdf.
@@ -37,7 +38,7 @@ Structure Of The Application
 ============================
 Below is an explanation of the main files and directories in this directory. Details on specific directory structure can be found in respective READMEs.
 
-**Directories**
+**Directories:**
  * **AST_modification:** Code to transform ASTs, mostly function merging. Includes statistics generation.
  * **data:** where raw, transformed, and statistical data is contained.
  * **data_generation:** Code used to create data for the project.
@@ -45,9 +46,10 @@ Below is an explanation of the main files and directories in this directory. Det
  * **node_modules:** Libraries that were used in my code are stored here.
  * **safe_minifier:** The YUI Compressor, yes it's in Java and no there seems to be no good well known non-Java minifiers.
  * **training:** Code to train and save the nueral networks.
- * **tests:** Tests for all the code, can be run from the top level with: node ./tests
+ * **tests:** Tests for all the code, can be run from the top level with: make test-all
 
-**Files**
+**Files:**
+ * **Makefile** Defines the commands to test this application.
  * **main.js:** Central file that runs everything.
  * **Report.pdf:** Report on why I made the choices I did and some of the data behind those choices.
  * **simple_example.js:** A two function file with 2 calls that can be minified, same example as in report.
@@ -58,13 +60,35 @@ Below is an explanation of the main files and directories in this directory. Det
 
 Testing
 =======
-**To Run:** make test 
+**To run all tests:** make test-all
 
-Testing has just been started so some of it is in flux. Currently using:
+**Unit Tests:** Covers all lower level code.
+ * **Run them once:** make test or make test-u or make test-unit
+ * **Run them with every code change:** make test-w or make test-watch
 
- * **Mocha.js:** As the testing base
- * **Chai.js:** For assertions
- * **Sinon.js:** For stubs and mocks
+**Integration Tests:** Covers the three main sections of the code; data generation, machine learning, code minification.
+ * **Run them once:** make test-i or make test-integration
+ * **Generator tests:**
+    * All files in data/raw_data ending in "test" will be used.
+    * Test by writing two functions to be merged then specify what the result code should be:
+
+---
+    function1 (a){ console.log(a); }
+    function2 (b){ return b * 2; }
+    
+    function1('hello');
+    var b = function2(b);
+
+    /*test:
+    function double(a, b) {
+    {
+      console.log(a);
+    }
+    return b * 2;
+    }
+    var b = double('hello', b);
+    */
+---
 
 All parts of the code are to be tested although to different degrees. Low level code will have unit tests (in a behavioral style) like in the current utility_function.js tests. The test code is located in
 the test directory and is driven by the index.js file there. Tests are run by a Makefile which specifies
@@ -74,7 +98,7 @@ Future
 ======
 The goal is to upgrade the minifier to the point where it can correct choose above 90% of minifications and where it provides a minification bonus of 50%.
 
-**Short Term: Simplify installation so it can be done in 1 step.**
+**Short Term: Simplify installation so it can be done in 1 step and test all the code.**
 
 Contributions
 =============
