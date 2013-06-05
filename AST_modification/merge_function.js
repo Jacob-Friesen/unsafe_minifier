@@ -18,7 +18,7 @@ module.exports = function mergeFunction(){
     this.merge = function(callMergeTo, callMergeFrom, functionMergeTo, functionMergeFrom, callback){
         mergeName = callMergeTo.simpleName + '-' + callMergeFrom.simpleName;
         
-        var twoReturns = this.mergeFunctions(functionMergeTo, functionMergeFrom);
+        var twoReturns = this.mergeFunctions(functionMergeTo.data, functionMergeFrom.data, functionMergeFrom.parent);
         this.mergeCalls(callMergeTo, callMergeFrom, twoReturns);
         
         merges.push(mergeName);
@@ -152,46 +152,55 @@ module.exports = function mergeFunction(){
     // Merges function declarations, returns boolean for if both functions had a return value
     // 1. Concatenate parameter lists
     // 2. Insert second functions body into first
-    // 3. Delete second function decleration
-    this.mergeFunctions = function(mergeTo, mergeFrom){
+    // 3. Delete second function decleration (from's parent is needed to guarantee this)
+    // TODO just send functions in, no x.data, also 'mergeTo' to 'to'
+    this.paramCouldntCopy = function(to, from){
+        return "Error: Second function parameters could not be copied into the first: \n"  + to + '\n' + from;
+    }
+    this.bodyCouldntCopy = function(to, from){
+        return "Error: Second function body could not be copied into the first: \n"  + to + '\n' + from;
+    }
+    this.mergeFunctions = function(to, from, fromParent){
         var twoReturns = false;
+        if (u.enu(to) || u.enu(from))
+            return twoReturns;
         
         // 1. Concatenate function parameters
-        if (u.hasOwnPropertyChain(mergeTo.data, 'params') && u.hasOwnPropertyChain(mergeFrom.data, 'params')){
+        if (u.hasOwnPropertyChain(to, 'params') && u.hasOwnPropertyChain(from, 'params')){
             // Assuming all bodies are arrays (from past evidence)
-             _.each(mergeFrom.data.params.reverse(), function(item){
-                if (!_.contains(mergeTo.data.params, item)){
-                    mergeTo.data.params.unshift(item);
+             _.each(from.params.reverse(), function(item){
+                if (!_.contains(to.params, item)){
+                    to.params.unshift(item);
                 }
             });
-            mergeFrom.data.params.reverse();// Note that reverse is in place so I must restore the array
+            from.params.reverse();// Note that reverse is in place so I must restore the array
         }
         else
-            throw("Error: Second function parameters could not be copied into the first");
+            throw(this.paramCouldntCopy(to, from));
         
         // 2. Copy second function body into the first
-        if (u.hasOwnPropertyChain(mergeTo.data, 'body', 'body') && u.hasOwnPropertyChain(mergeFrom.data, 'body', 'body')){
-            // Add body data in the form of a block statement, preserves mergeFrom's object which could be the parent of a call. Unfortunately, each
-            // function body add now carries a penalty of two extra characters ('{ and '}')
+        if (u.hasOwnPropertyChain(to, 'body', 'body') && u.hasOwnPropertyChain(from, 'body', 'body')){
+            // Add body data in the form of a block statement, preserves from's object which could be the parent of a call. Unfortunately, each
+            // function body add now carries a penalty of two extra characters ('{ and '}'). These are eliminated in safe minification later.
             if (!this.isDuplicateInsert()){
                 var toInsert = {
                     type: "BlockStatement",
-                    body: mergeFrom.data.body.body
+                    body: from.body.body
                 }
                 
                 // Combine return statements if necessary
-                var last = _.last(mergeFrom.data.body.body)
+                var last = _.last(from.body.body);
                 if (u.hasOwnPropertyChain(last, 'type') && last.type === 'ReturnStatement')
-                    twoReturns = this.returnHandler.moveReturns(mergeTo.data.body,  mergeFrom.data.body);
+                    twoReturns = this.returnHandler.moveReturns(to.body,  from.body);
                 else
-                    mergeTo.data.body.body.unshift(toInsert);
+                    to.body.body.unshift(toInsert);
             }
         }
         else
-            throw("Error: Second function body could not be copied into the first");
+            throw(this.bodyCouldntCopy(to, from));
         
         // 3. Delete second function declaration
-        this.removeFromParent(mergeFrom.data, mergeFrom.parent);
+        this.removeFromParent(from, fromParent);
         
         return twoReturns;
     }

@@ -30,9 +30,9 @@ module.exports = function(callback){
             });
 
             it('should return empty elements when the element sent in is empty and the object to add to is ENU', function() {
-                assert.isTrue( _.isEmpty(returnHandler.addArgsToElements(null, [])) );
-                assert.isTrue( _.isEmpty(returnHandler.addArgsToElements(test.test, [])) );
-                assert.isTrue( _.isEmpty(returnHandler.addArgsToElements({}, [])) );
+                assert.deepEqual(returnHandler.addArgsToElements(null, []), []);
+                assert.deepEqual(returnHandler.addArgsToElements(test.test, []), []);
+                assert.deepEqual(returnHandler.addArgsToElements({}, []), []);
             });
 
             it('should add the specified element\'s argument to an empty array and return an array containing just that argument', function(){
@@ -69,8 +69,7 @@ module.exports = function(callback){
 
             it('should return an object with an empty return and indication of no 2nd return, when given 2 ENU returns', function(){
                 (function run(arg1, arg2){
-                    assert.isTrue(_.isEqual( returnHandler.generateNewReturn(arg1, arg2), 
-                                             {newReturn: test.returnTemplate, returnInTo: false} ));
+                    assert.deepEqual( returnHandler.generateNewReturn(arg1, arg2), {newReturn: test.returnTemplate, returnInTo: false} );
                     return run;
                 })()(null)(null, null)({}, null)({},{});// Send in 2 undefineds then one null and a undefined and etc.
             });
@@ -79,8 +78,7 @@ module.exports = function(callback){
                 setReturnTemplateElements([test.return1.argument]);
 
                 (function run(arg){
-                    assert.isTrue(_.isEqual( returnHandler.generateNewReturn(test.return1, arg),
-                                             {newReturn: test.returnTemplate, returnInTo: true} ));
+                    assert.deepEqual( returnHandler.generateNewReturn(test.return1, arg), {newReturn: test.returnTemplate, returnInTo: true} );
                     return run;
                 })()(null)({});
             });
@@ -89,8 +87,7 @@ module.exports = function(callback){
                 test.returnTemplate.argument = test.return1.argument;
 
                 (function run(arg){
-                    assert.isTrue(_.isEqual( returnHandler.generateNewReturn(arg, test.return1), 
-                                             {newReturn: test.returnTemplate, returnInTo: false} ));
+                    assert.deepEqual( returnHandler.generateNewReturn(arg, test.return1), {newReturn: test.returnTemplate, returnInTo: false} );
                     return run;
                 })()(null)({});
             });
@@ -101,8 +98,7 @@ module.exports = function(callback){
 
                 // Running the same test twice to check if either return sent in is modified which shouldn't happen
                 for (var i = 0; i < 2; i += 1)
-                    assert.isTrue(_.isEqual( returnHandler.generateNewReturn(test.return2, test.return1),
-                                             {newReturn: test.returnTemplate, returnInTo: true} ));
+                    assert.deepEqual( returnHandler.generateNewReturn(test.return2, test.return1), {newReturn: test.returnTemplate, returnInTo: true} );
             });
 
             it('should return same as last with an extra arg, 1st return\'s argument now has elements instead of a single element', function(){
@@ -111,16 +107,14 @@ module.exports = function(callback){
 
                 // Running the same test twice to check if either return sent in is modified which shouldn't happen
                 for (var i = 0; i < 2; i += 1)
-                    assert.isTrue(_.isEqual( returnHandler.generateNewReturn(test.returnArray1, test.return1),
-                                             {newReturn: test.returnTemplate, returnInTo: true} ));
+                    assert.deepEqual( returnHandler.generateNewReturn(test.returnArray1, test.return1), {newReturn: test.returnTemplate, returnInTo: true} );
             });
 
             it('should return same as 2 above with an extra arg, 2nd return\'s argument now has elements instead of a single element', function(){
                 var elements = test.returnArray1.argument.elements;
                 setReturnTemplateElements([elements[0], elements[1], test.return1.argument])
 
-                assert.isTrue(_.isEqual( returnHandler.generateNewReturn(test.return1, test.returnArray1),
-                         {newReturn: test.returnTemplate, returnInTo: true} ));
+                assert.deepEqual( returnHandler.generateNewReturn(test.return1, test.returnArray1), {newReturn: test.returnTemplate, returnInTo: true} );
             });
 
             it('should return same as last with 2 extra args, 1st and 2nd returns argument now have elements instead of a single element', function(){
@@ -128,8 +122,7 @@ module.exports = function(callback){
                     elements2 = test.returnArray2.argument.elements;
                 setReturnTemplateElements([elements1[0], elements1[1], elements2[0], elements2[1]])
 
-                assert.isTrue(_.isEqual( returnHandler.generateNewReturn(test.returnArray2, test.returnArray1),
-                         {newReturn: test.returnTemplate, returnInTo: true} ));
+                assert.deepEqual( returnHandler.generateNewReturn(test.returnArray2, test.returnArray1), {newReturn: test.returnTemplate, returnInTo: true} );
             });
         });
 
@@ -155,23 +148,23 @@ module.exports = function(callback){
 
                 assert.isFalse(returnHandler.moveReturns(test.functionBody1, test.functionBodyNoReturn));
 
-                assert.isTrue( _.isEqual(test.functionBody1.body[0], test.functionBodyNoReturn) );
+                assert.deepEqual(test.functionBody1.body[0], test.functionBodyNoReturn);
                 for (var i = 1; i < oldBody.length + 1; i += 1)
-                    assert.isTrue(_.isEqual( test.functionBody1.body[i], oldBody[i - 1] ));
+                    assert.deepEqual( test.functionBody1.body[i], oldBody[i - 1] );
             });
 
             it('should return false and add the from bodies return if the merge from body has a return and the to body does not', function(){
                 assert.isFalse(returnHandler.moveReturns(test.functionBodyNoReturn, test.functionBody1));
-                assert.isTrue( _.isEqual(_.last(test.functionBodyNoReturn), _.last(test.functionBody1)) );
+                assert.deepEqual( _.last(test.functionBodyNoReturn), _.last(test.functionBody1) );
             });
 
             it('should also insert the from bodies contents at the beggining of to bodies and modify nothing else before the last element', function(){
                 var oldBody = _.cloneDeep(test.functionBodyNoReturn.body);
                 returnHandler.moveReturns(test.functionBodyNoReturn, test.functionBody1);
 
-                assert.isTrue( _.isEqual(_.last(test.functionBodyNoReturn[0]), _.last(test.functionBody1)) );
+                assert.deepEqual(_.last(test.functionBodyNoReturn[0]), _.last(test.functionBody1));
                 for (var i = 1; i < oldBody.length + 1; i += 1)
-                    assert.isTrue(_.isEqual( test.functionBodyNoReturn.body[i], oldBody[i - 1] ));
+                    assert.deepEqual( test.functionBodyNoReturn.body[i], oldBody[i - 1] );
             });
 
             it('should return true and add the from bodies returns arguments to the to bodies arguments if both have returns', function(){
@@ -182,7 +175,7 @@ module.exports = function(callback){
 
                 _.last(oldBody2.body).argument.elements.concat(_.last(oldBody1.body).argument.elements);
                 _.last(oldBody2.body).argument.elements.forEach(function(element, index){
-                    assert.isTrue(_.isEqual( _.last(test.functionBody1.body).argument.elements[index], element ));
+                    assert.deepEqual( _.last(test.functionBody1.body).argument.elements[index], element );
                 });
             });
 
@@ -190,9 +183,9 @@ module.exports = function(callback){
                 var oldBody = _.cloneDeep(test.functionBody1.body);
                 returnHandler.moveReturns(test.functionBody1, test.functionBody2);
 
-                assert.isTrue( _.isEqual(_.last(test.functionBody1[0]), _.last(test.functionBody2)) );
+                assert.deepEqual(_.last(test.functionBody1[0]), _.last(test.functionBody2));
                 for (var i = 1; i < oldBody.length; i += 1)
-                    assert.isTrue(_.isEqual( test.functionBody1.body[i], oldBody[i - 1] ));
+                    assert.deepEqual( test.functionBody1.body[i], oldBody[i - 1] );
             });
         });
     });

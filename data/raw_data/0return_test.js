@@ -1,3 +1,9 @@
+function print(a){ console.log(a); }
+function double(b){ return b * 2; }
+
+print('hello');
+var b = double(b);
+
 function f1(x){
     x + x;
 }
