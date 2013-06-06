@@ -55,7 +55,7 @@ module.exports = function mergeFunction(){
             // Loop through expression parent until expression is located, the index is where to insert to after.    
             _.find(loopingItem, function(item, index){
                 if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && item.loc.start.line === mergeTo.assignmentExp.loc.start.line){
-                    this.addSplittingVariables(index, mergeFrom, mergeTo, loopingItem);
+                    this.addSplittingVariables(index, mergeTo.assignmentExp, mergeFrom.assignmentExp, loopingItem);
                     return true;
                 }
             });
@@ -95,65 +95,87 @@ module.exports = function mergeFunction(){
         return true;
     }
     
-    // Function will be modified to return the two variables as an array, so must extract each individually. If the merging to function has already
-    // done this operation...
+    // Function will be modified to return the two variables as an array, so must extract each individually which is what this does. Uses the to and
+    // from assignment expressions to get the right variables and puts them in to's parent. The index is to's location in it's parent. If the merging
+    // to function has already done this operation...
+    // e.g. with this return
+    //    return [
+    //        x * x,
+    //        y
+    //    ];
+    // You will get the call space modified like so:
+    // _r = fromToMerge(5, 6);
+    // a = _r[0];
+    // b = _r[1];
+    //
     // Note: Will only work if parent is an array
-    this.addSplittingVariables = function(index, mergeFrom, mergeTo, mergeToAssignmentParent){
-        if (mergeFrom.assignmentExp.type === 'AssignmentExpression')
-            var varFor1 =  mergeFrom.assignmentExp.left.name;
-        else
-            var varFor1 = 'var ' + mergeFrom.assignmentExp.declarations[0].id.name;
-        
+    this.splitVar = '_r';
+    this.addSplittingVariables = function(index, to, from, toParent){
+        if (u.nullOrUndefined(index) || u.enu(from) || u.enu(to) || u.enu(toParent))
+            return true;
+
+        var varFrom = this.getVariableName(from);
         
         // to already split variables with another function, so just add from's variable assignment i.e. <fromVar> = _r[<last r>]
-        if (u.hasOwnPropertyChain(mergeTo.assignmentExp, 'left', 'name') && mergeTo.assignmentExp.left.name === '_r'){
+        if (u.hasOwnPropertyChain(to, 'left', 'name') && to.left.name === '_r'){
             
-            // Increment each index of the inserted splitting variables
-            if (u.hasOwnPropertyChain(mergeToAssignmentParent, (index + 1) + "", "body")){
-                var lastItem = _.last(mergeToAssignmentParent[index + 1].body);
+            // Increment each index of the already inserted splitting variables
+            if (u.hasOwnPropertyChain(toParent, (index + 1) + "", "body")){
+
+                var lastItem = _.last(toParent[index + 1].body);
                 for (var i = 1; u.hasOwnPropertyChain(lastItem, 'expression', 'right', 'object') &&
-                                lastItem.expression.right.object.name === '_r'; i += 1){ 
+                    lastItem.expression.right.object.name === this.splitVar; i += 1){ 
                     lastItem.expression.right.property.value += 1;
-                    if (u.hasOwnPropertyChain(mergeToAssignmentParent, (index + i + 1) + "", "body"))
-                        lastItem = _.last(mergeToAssignmentParent[index + i + 1].body);
+                    if (u.hasOwnPropertyChain(toParent, (index + i + 1) + "", "body"))
+                        lastItem = _.last(toParent[index + i + 1].body);
                     else
                         break;
                 }
             }
             
-            // Insert the mergeFrom argument first
-            mergeToAssignmentParent.splice(index + 1, 0, esprima.parse(varFor1 + ' = _r[0];', {loc: false}));
+            // Insert the from argument first before all the previously inserted arguments
+            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = '+this.splitVar+'[0];', {loc: false}));
         }
+        // Splitting variables for the first time
         else{
-            if (mergeTo.assignmentExp.type === 'AssignmentExpression')
-                var varFor2 =  mergeTo.assignmentExp.left.name;
-            else
-                var varFor2 = 'var ' + mergeTo.assignmentExp.declarations[0].id.name;
+            var varTo = this.getVariableName(to);
                 
-            mergeToAssignmentParent.splice(index + 1, 0, esprima.parse(varFor1 + ' = _r[0];', {loc: false}));
-            mergeToAssignmentParent.splice(index + 2, 0, esprima.parse(varFor2 + ' = _r[1];', {loc: false}));
+            // Add the two new return splits to the place after the call
+            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = ' + this.splitVar+'[0];', {loc: false}));
+            toParent.splice(index + 2, 0, esprima.parse(varTo + ' = ' + this.splitVar+'[1];', {loc: false}));
             
             // Replace variable name of array returned, make sure to use a var so no global variable is set
-            if (mergeTo.assignmentExp.type === 'AssignmentExpression')
-                mergeTo.assignmentExp.left.name = '_r';
+            if (varTo.indexOf('var') < 0){
+                if (to.expression)
+                    to.expression.left.name = this.splitVar;
+                else
+                    to.left.name = this.splitVar;
+            }
             else
-                mergeTo.assignmentExp.declarations[0].id.name = '_r';
+                to.declarations[0].id.name = this.splitVar;
             
-            var code = escodegen.generate(mergeTo.assignmentExp);
-            var varForMain = (code.indexOf('+') < 0 && code.indexOf('.') < 0) ? 'var ': '';
-            
-            mergeToAssignmentParent.splice(index, 0, esprima.parse(code, {loc: false}) );
-            mergeToAssignmentParent.remove(index);
+            toParent.splice(index, 0, to);
+            toParent.remove(index);
         }
         
         return true;
+    }
+
+    // Extracts the variable assigning to from the given object
+    this.getVariableName = function(object){
+        if (u.enu(object))
+            return '';
+        if (object.type === 'AssignmentExpression')
+            return object.left.name;
+        else if (object.type === 'ExpressionStatement')
+            return object.expression.left.name;
+        return 'var ' + object.declarations[0].id.name;
     }
     
     // Merges function declarations, returns boolean for if both functions had a return value
     // 1. Concatenate parameter lists
     // 2. Insert second functions body into first
     // 3. Delete second function decleration (from's parent is needed to guarantee this)
-    // TODO just send functions in, no x.data, also 'mergeTo' to 'to'
     this.paramCouldntCopy = function(to, from){
         return "Error: Second function parameters could not be copied into the first: \n"  + to + '\n' + from;
     }

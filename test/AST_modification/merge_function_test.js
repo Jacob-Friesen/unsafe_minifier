@@ -355,6 +355,129 @@ module.exports = function(callback){
                 mergeFunction.isDuplicateInsert.restore();
             });
         });
+
+        describe('#getVariableName()', function(){
+            it('should return an empty string if the object sent in is enu', function(){
+                assert.equal(mergeFunction.getVariableName(), '');
+                assert.equal(mergeFunction.getVariableName(null), '');
+                assert.equal(mergeFunction.getVariableName({}), '');
+            });
+
+            it('should be able to get an AssignmentExpression\'s name', function(){
+                assert.equal(mergeFunction.getVariableName(test.assignmentExpression), test.assignmentExpression.left.name);
+            });
+
+            it('should be able to get an ExpressionStatement\s name', function(){
+                assert.equal(mergeFunction.getVariableName(test.expressionStatement), test.expressionStatement.expression.left.name);
+            });
+
+            it('should be able to get an VariableDeclaration\s name', function(){
+                assert.equal(mergeFunction.getVariableName(test.variableDeclaration1), 'var ' + test.variableDeclaration1.declarations[0].id.name);
+            });
+        });
+
+        describe('#addSplittingVariables()', function(){
+            function testNoModify(index, to, from, toParent){
+                var original = _.cloneDeep(to);
+                mergeFunction.addSplittingVariables(index, to, from, toParent);
+                assert.deepEqual(to, original);
+            }
+
+            // Tests first time split by to being at the start and end of it's parent array, uses assignmentParent
+            function testStartEndFirstTime(to, from){
+                var originalTo = _.cloneDeep(to);
+                    originalFrom = _.cloneDeep(from)
+
+                // test having the item at the beginning and the end of the parent
+                testFirstTimeSplit(to, from, 0);
+                test.assignmentParent.push(originalTo)
+                testFirstTimeSplit(originalTo, originalFrom, test.assignmentParent.length - 1);
+            }
+
+            function testFirstTimeSplit(to, from, index){
+                var originalAssignment1 = _.cloneDeep(to),
+                    originalAssignment2 = _.cloneDeep(from);
+
+                mergeFunction.addSplittingVariables(index, to, from, test.assignmentParent);
+                
+                // first statement needs no var in front
+                if (!test.assignmentParent[index].kind){
+
+                    if (!test.assignmentParent[index].expression){
+                        
+                        if (test.assignmentParent[index].right.callee.object.name)
+                            assert.equal(test.assignmentParent[index].right.callee.object.name, mergeFunction.splitVar);
+                        else
+                            assert.equal(test.assignmentParent[index].left.name, mergeFunction.splitVar);
+                    }
+                    else
+                        assert.equal(test.assignmentParent[index].expression.left.name, mergeFunction.splitVar);
+                }
+                // first statement needs var in front
+                else{
+                    assert.equal(test.assignmentParent[index].declarations[0].id.name, mergeFunction.splitVar);
+                    assert.equal(test.assignmentParent[index].kind, 'var')
+                }
+
+                // Next 2 assignments will be in the form var before = _r[index] 
+                testVarCorrect(test.assignmentParent[index + 1].body[0], originalAssignment2, 0);
+                testVarCorrect(test.assignmentParent[index + 2].body[0], originalAssignment1, 1);
+            }
+
+            // Checks if the decleration has a var in front if it should and if the right variable is being assigned with the right index
+            function testVarCorrect(declaration, assignedTo, index){
+                assert.equal(declaration.kind, assignedTo.kind);
+
+                // If this is an assignment to an existing var
+                if (!declaration.kind){
+                    assert.equal(declaration.expression.right.object.name, mergeFunction.splitVar);
+                    assert.equal(declaration.expression.right.property.value, index);
+
+                    // The declarationName is needed for when assigned to is an assigment expression (does not happen to from)
+                    var declarationName = (declaration.expression) ? declaration.expression.left.name : declaration.left.name;
+                    assert.equal(declaration.expression.left.name, declarationName);
+                } 
+                else{
+                    assert.equal(declaration.declarations[0].init.object.name, mergeFunction.splitVar);
+                    assert.equal(declaration.declarations[0].init.property.value, index);
+                    assert.equal(declaration.declarations[0].id.name, assignedTo.declarations[0].id.name);
+                }
+            }
+
+            it('should do nothing if from or to are enu', function(){
+                (function split(to, from){
+                    testNoModify(1, to, from, test.assignmentParent);
+                    return split;
+                })()(null)(null, {})(null, null)({})({}, null)({}, {});
+            });
+
+            it('should do nothing if index is null/undefined or to\'s parent are enu', function(){
+                (function split(index, toParent){
+                    testNoModify(index, test.variableDeclaration1, test.variableDeclaration2, toParent);
+                    return split;
+                })()(null)(null, {})(null, null);
+            });
+
+            it('should replace the assignment expression with a var in to\'s parent with _r = last() and 2 splits with vars', function(){
+                testStartEndFirstTime(test.assignmentParent[0], test.assignmentParent[1]);
+            });
+
+            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with one var (from)', function(){ 
+                test.assignmentParent.unshift(test.variableDeclaration1);
+                testStartEndFirstTime(test.variableDeclaration1, test.expressionStatement);
+            });
+
+            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with one var (to)', function(){
+                test.assignmentParent.unshift(test.expressionStatement);
+                testStartEndFirstTime(test.expressionStatement, test.variableDeclaration1);
+            });
+
+            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with no vars', function(){
+                var expressionCopy = _.cloneDeep(test.expressionStatement);
+                test.assignmentParent.unshift(test.expressionStatement);
+                testStartEndFirstTime(test.expressionStatement, expressionCopy);
+            });
+        });
     });
 }
 
@@ -388,65 +511,6 @@ var resetTestData = (function reset(){
             type: 'BlockStatement',
             body: [],
             loc: test.loc1
-        },
-        rest: null,
-        generator: false,
-        expression: false,
-        loc: test.loc1
-    };
-
-    test.functionDeclaration = {
-        type: "FunctionDeclaration",
-        id: {
-            "type": "Identifier",
-            "name": "test"
-        },
-        params: [
-            {
-                "type": "Identifier",
-                "name": "a"
-            },
-            {
-                "type": "Identifier",
-                "name": "b"
-            }
-        ],
-        defaults: [],
-        body: {
-            type: "BlockStatement",
-            body:  [
-                {
-                    type: "ExpressionStatement",
-                    expression: {
-                        type: "AssignmentExpression",
-                        operator: "+=",
-                        left: {
-                            type: "Identifier",
-                            name: "a"
-                        },
-                        right: {
-                            type: "Literal",
-                            value: 1,
-                            raw: "1"
-                        }
-                    }
-                },
-                {
-                    type: "ReturnStatement",
-                    argument: {
-                        type: "BinaryExpression",
-                        operator: "*",
-                        left: {
-                            type: "Identifier",
-                            name: "a"
-                        },
-                        right: {
-                            type: "Identifier",
-                            name: "b"
-                        }
-                    }
-                }
-            ]
         },
         rest: null,
         generator: false,
@@ -498,7 +562,67 @@ var resetTestData = (function reset(){
         },
         arguments: [],
         loc: test.loc3
-     }
+    }
+
+    test.assignmentExpression = { 
+        type: 'AssignmentExpression',
+        operator: '=',
+        left: 
+        { 
+            type: 'Identifier',
+            name: 'c',
+            loc: test.loc1
+        },
+        right: test.callExpression1,
+        loc: test.loc1
+    }
+
+    test.functionDeclaration = {
+        type: "FunctionDeclaration",
+        id: {
+            "type": "Identifier",
+            "name": "test"
+        },
+        params: [
+            {
+                "type": "Identifier",
+                "name": "a"
+            },
+            {
+                "type": "Identifier",
+                "name": "b"
+            }
+        ],
+        defaults: [],
+        body: {
+            type: "BlockStatement",
+            body:  [
+                {
+                    type: "ExpressionStatement",
+                    expression: test.assignmentExpression
+                },
+                {
+                    type: "ReturnStatement",
+                    argument: {
+                        type: "BinaryExpression",
+                        operator: "*",
+                        left: {
+                            type: "Identifier",
+                            name: "a"
+                        },
+                        right: {
+                            type: "Identifier",
+                            name: "b"
+                        }
+                    }
+                }
+            ]
+        },
+        rest: null,
+        generator: false,
+        expression: false,
+        loc: test.loc1
+    };
 
     test.parentArray = [
         test.emptyFunctionExpression,
@@ -557,6 +681,75 @@ var resetTestData = (function reset(){
         },
         loc: test.loc3 
     }
+
+    // Used to build addSplittingVariables tests
+    test.expressionStatement = {
+        type: "ExpressionStatement",
+        expression: {
+            type: "AssignmentExpression",
+            operator: "=",
+            left: {
+                type: "Identifier",
+                name: "a"
+            },
+            right: {
+                type: "CallExpression",
+                callee: {
+                    type: "Identifier",
+                    name: "red"
+                },
+                arguments: [
+                    {
+                        type: "Identifier",
+                        name: "v"
+                    }
+                ]
+            }
+        }
+    }
+
+    test.variableDeclaration1 = { 
+        type: 'VariableDeclaration',
+        declarations: [
+            { 
+                type: 'VariableDeclarator',
+                id: { 
+                    type: 'Identifier',
+                    name: 'a',
+                    loc: test.loc1
+                },
+                init: test.callExpression1,
+                loc: test.loc1
+            }
+        ],
+        kind: 'var',
+        loc: test.loc1,
+    }
+
+    test.variableDeclaration2 = { 
+        type: 'VariableDeclaration',
+        declarations: [
+            { 
+                type: 'VariableDeclarator',
+                id: 
+                { 
+                    type: 'Identifier',
+                    name: 'b',
+                    loc: test.loc2
+                },
+                init: test.callExpression2,
+                loc: test.loc2
+            }
+        ],
+        kind: 'var',
+        loc: test.loc1
+    }
+
+    test.assignmentParent = [ 
+        test.assignmentExpression,
+        test.variableDeclaration1,
+        test.expressionStatement
+    ]
     
     return reset;
 })();
