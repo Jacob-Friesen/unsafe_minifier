@@ -215,10 +215,6 @@ function multipleTransfer1and2and3(y){
 a = f13(5);
 b = f14(6);
 c = multipleTransfer1and2and3(7);
-//_r = multipleTransfer1and2and3(5, 6, 7);
-//a = _r[0];
-//b = _r[1];
-//c = _r[2];
 /*test:
 function multipleTransfer1and2and3(x, w, y) {
     return [

@@ -55,7 +55,7 @@ module.exports = function mergeFunction(){
             // Loop through expression parent until expression is located, the index is where to insert to after.    
             _.find(loopingItem, function(item, index){
                 if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && item.loc.start.line === mergeTo.assignmentExp.loc.start.line){
-                    this.addSplittingVariables(index, mergeTo.assignmentExp, mergeFrom.assignmentExp, loopingItem);
+                    this.splitCallAssignment(index, mergeTo.assignmentExp, mergeFrom.assignmentExp, loopingItem);
                     return true;
                 }
             });
@@ -96,8 +96,7 @@ module.exports = function mergeFunction(){
     }
     
     // Function will be modified to return the two variables as an array, so must extract each individually which is what this does. Uses the to and
-    // from assignment expressions to get the right variables and puts them in to's parent. The index is to's location in it's parent. If the merging
-    // to function has already done this operation...
+    // from assignment expressions to get the right variables and puts them in to's parent. The index is to's location in it's parent.
     // e.g. with this return
     //    return [
     //        x * x,
@@ -110,22 +109,26 @@ module.exports = function mergeFunction(){
     //
     // Note: Will only work if parent is an array
     this.splitVar = '_r';
-    this.addSplittingVariables = function(index, to, from, toParent){
+    this.splitCallAssignment = function(index, to, from, toParent){
         if (u.nullOrUndefined(index) || u.enu(from) || u.enu(to) || u.enu(toParent))
             return true;
 
-        var varFrom = this.getVariableName(from);
+        var varFrom = this.getVariableName(from),
+            varTo = this.getVariableName(to);
         
         // to already split variables with another function, so just add from's variable assignment i.e. <fromVar> = _r[<last r>]
-        if (u.hasOwnPropertyChain(to, 'left', 'name') && to.left.name === '_r'){
-            
+        if (varTo.indexOf(this.splitVar) >= 0){
             // Increment each index of the already inserted splitting variables
             if (u.hasOwnPropertyChain(toParent, (index + 1) + "", "body")){
 
                 var lastItem = _.last(toParent[index + 1].body);
-                for (var i = 1; u.hasOwnPropertyChain(lastItem, 'expression', 'right', 'object') &&
-                    lastItem.expression.right.object.name === this.splitVar; i += 1){ 
-                    lastItem.expression.right.property.value += 1;
+                for (var i = 1; this.getVariableName(lastItem).indexOf(this.splitVar >= 0); i += 1){
+                    // part to increment depends on if there is a var in front or not
+                    if (lastItem.type === 'ExpressionStatement')
+                        lastItem.expression.right.property.value += 1; 
+                    else
+                        lastItem.declarations[0].init.property.value += 1;
+
                     if (u.hasOwnPropertyChain(toParent, (index + i + 1) + "", "body"))
                         lastItem = _.last(toParent[index + i + 1].body);
                     else
@@ -133,18 +136,16 @@ module.exports = function mergeFunction(){
                 }
             }
             
-            // Insert the from argument first before all the previously inserted arguments
+            // Insert the from argument before all the previously inserted arguments
             toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = '+this.splitVar+'[0];', {loc: false}));
         }
         // Splitting variables for the first time
-        else{
-            var varTo = this.getVariableName(to);
-                
+        else{    
             // Add the two new return splits to the place after the call
             toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = ' + this.splitVar+'[0];', {loc: false}));
             toParent.splice(index + 2, 0, esprima.parse(varTo + ' = ' + this.splitVar+'[1];', {loc: false}));
             
-            // Replace variable name of array returned, make sure to use a var so no global variable is set
+            // Replace variable name of array returned with the split var, make sure to use a var so no global variable is set
             if (varTo.indexOf('var') < 0){
                 if (to.expression)
                     to.expression.left.name = this.splitVar;

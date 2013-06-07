@@ -376,30 +376,15 @@ module.exports = function(callback){
             });
         });
 
-        describe('#addSplittingVariables()', function(){
+        describe('#splitCallAssignment()', function(){
             function testNoModify(index, to, from, toParent){
                 var original = _.cloneDeep(to);
-                mergeFunction.addSplittingVariables(index, to, from, toParent);
+                mergeFunction.splitCallAssignment(index, to, from, toParent);
                 assert.deepEqual(to, original);
             }
 
-            // Tests first time split by to being at the start and end of it's parent array, uses assignmentParent
-            function testStartEndFirstTime(to, from){
-                var originalTo = _.cloneDeep(to);
-                    originalFrom = _.cloneDeep(from)
-
-                // test having the item at the beginning and the end of the parent
-                testFirstTimeSplit(to, from, 0);
-                test.assignmentParent.push(originalTo)
-                testFirstTimeSplit(originalTo, originalFrom, test.assignmentParent.length - 1);
-            }
-
-            function testFirstTimeSplit(to, from, index){
-                var originalAssignment1 = _.cloneDeep(to),
-                    originalAssignment2 = _.cloneDeep(from);
-
-                mergeFunction.addSplittingVariables(index, to, from, test.assignmentParent);
-                
+            // tests if the var _r = functionToMergeTo(...) is correct
+            function testMainAssignmentCorrect(index){
                 // first statement needs no var in front
                 if (!test.assignmentParent[index].kind){
 
@@ -418,13 +403,9 @@ module.exports = function(callback){
                     assert.equal(test.assignmentParent[index].declarations[0].id.name, mergeFunction.splitVar);
                     assert.equal(test.assignmentParent[index].kind, 'var')
                 }
-
-                // Next 2 assignments will be in the form var before = _r[index] 
-                testVarCorrect(test.assignmentParent[index + 1].body[0], originalAssignment2, 0);
-                testVarCorrect(test.assignmentParent[index + 2].body[0], originalAssignment1, 1);
             }
 
-            // Checks if the decleration has a var in front if it should and if the right variable is being assigned with the right index
+            // Checks if the declaration has a var in front if it should and if the right variable is being assigned with the right index
             function testVarCorrect(declaration, assignedTo, index){
                 assert.equal(declaration.kind, assignedTo.kind);
 
@@ -458,25 +439,115 @@ module.exports = function(callback){
                 })()(null)(null, {})(null, null);
             });
 
-            it('should replace the assignment expression with a var in to\'s parent with _r = last() and 2 splits with vars', function(){
-                testStartEndFirstTime(test.assignmentParent[0], test.assignmentParent[1]);
+            describe('splitting variables for the first time', function(){
+                // Tests first time split by to being at the start then end of it's parent array, uses assignmentParent
+                function testStartEndFirstTime(to, from){
+                    var originalTo = _.cloneDeep(to);
+                        originalFrom = _.cloneDeep(from)
+
+                    // test having the item at the beginning and the end of the parent
+                    testFirstTimeSplit(to, from, 0);
+                    test.assignmentParent.push(originalTo)
+                    testFirstTimeSplit(originalTo, originalFrom, test.assignmentParent.length - 1);
+                }
+
+                // Checks if the correct variables were assigned in a first time split
+                function testFirstTimeSplit(to, from, index){
+                    var originalAssignment1 = _.cloneDeep(to),
+                        originalAssignment2 = _.cloneDeep(from);
+
+                    mergeFunction.splitCallAssignment(index, to, from, test.assignmentParent);
+                    
+                    // Main assignment then split tests
+                    testMainAssignmentCorrect(index);
+                    testVarCorrect(test.assignmentParent[index + 1].body[0], originalAssignment2, 0);
+                    testVarCorrect(test.assignmentParent[index + 2].body[0], originalAssignment1, 1);
+                }
+
+                it('should replace the assignment expression with a var in to\'s parent with _r = and 2 splits with vars', function(){
+                    test.assignmentParent.unshift(test.variableDeclaration1);
+                    testStartEndFirstTime(test.variableDeclaration1, test.variableDeclaration2);
+                });
+
+                it('should replace the assignment expression with a var in to\'s parent with a _r = and 2 splits with one a from var', function(){ 
+                    test.assignmentParent.unshift(test.variableDeclaration1);
+                    testStartEndFirstTime(test.variableDeclaration1, test.expressionStatement);
+                });
+
+                it('should replace the assignment expression with a var in to\'s parent with a _r = and 2 splits with a to var', function(){
+                    test.assignmentParent.unshift(test.expressionStatement);
+                    testStartEndFirstTime(test.expressionStatement, test.variableDeclaration2);
+                });
+
+                it('should replace the assignment expression with a var in to\'s parent with a _r = and 2 splits with no vars', function(){
+                    var expressionCopy = _.cloneDeep(test.expressionStatement);
+                    test.assignmentParent.unshift(test.expressionStatement);
+                    testStartEndFirstTime(test.expressionStatement, expressionCopy);
+                });
             });
 
-            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with one var (from)', function(){ 
-                test.assignmentParent.unshift(test.variableDeclaration1);
-                testStartEndFirstTime(test.variableDeclaration1, test.expressionStatement);
+            describe('splitting variables to an already split call', function(){
+                function insertSplitAt(start, to, from){
+                    var method = (start) ? 'unshift' : 'push';
+                    test.assignmentParent[method](to);
+
+                    var position = (start) ? 0 : test.assignmentParent.length - 1;
+                    mergeFunction.splitCallAssignment(position, to, from, test.assignmentParent);
+                }
+
+                // Insert the specified to at the start/end of assignment parent, the split it by giving a from (deep copy) of itself
+                function insertSplitAtb(start, to, from){
+                    var method = (start) ? 'unshift' : 'push';
+                    test.assignmentParent[method](_.cloneDeep(to));
+
+                    var position = (start) ? 0 : test.assignmentParent.length - 1;
+                    mergeFunction.splitCallAssignment(position, _.cloneDeep(to), _.cloneDeep(from), test.assignmentParent);
+                }
+
+                // Checks if the correct variables were assigned in a first time split
+                function testMultiSplit(to, from, start){
+                    insertSplitAt(start, to, from);
+
+                    var index = (start) ? 0 : test.assignmentParent.length - 3,
+                        originalKind = test.assignmentParent[index].kind,
+                        originalFromAssignment = _.cloneDeep(from),
+                        originalPrevious1 = _.cloneDeep(test.assignmentParent[index + 1]),
+                        originalPrevious2 = _.cloneDeep(test.assignmentParent[index + 2]);
+
+                    mergeFunction.splitCallAssignment(index, to, from, test.assignmentParent);
+                    index = (start) ? 0 : test.assignmentParent.length - 4;
+
+                    // Main assignment then from split then previous splits (now incremented)
+                    testMainAssignmentCorrect(index);
+                    testVarCorrect(test.assignmentParent[index + 1].body[0], originalFromAssignment, 0);
+                    testVarCorrect(test.assignmentParent[index + 2].body[0], originalPrevious1.body[0], 1);
+                    testVarCorrect(test.assignmentParent[index + 3].body[0], originalPrevious2.body[0], 2);
+                }
+
+                function testMultiSplitStartEnd(to, from){
+                    testMultiSplit(test[to], test[from], false);
+                    resetTestData();
+                    testMultiSplit(test[to], test[from], true);
+                }
+
+                it('should insert the new from split at the beggining and increment previously inserted values with 2 with from-to vars', function(){
+                    testMultiSplitStartEnd('variableDeclaration1', 'variableDeclaration2');
+                });
+
+                it('should do the same as last (with changed var checks), but now from is not a variable declaration', function(){
+                    testMultiSplitStartEnd('variableDeclaration1', 'expressionStatement');
+                });
+
+                it('should do the same as last (with changed var checks), but now to is not a variable declaration instead of from', function(){
+                    testMultiSplitStartEnd('expressionStatement', 'variableDeclaration2');
+                });
+
+                it('should do the same as last (with changed var checks), but now both are not declarations', function(){
+                    testMultiSplitStartEnd('expressionStatement', 'expressionStatement');
+                });
             });
 
-            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with one var (to)', function(){
-                test.assignmentParent.unshift(test.expressionStatement);
-                testStartEndFirstTime(test.expressionStatement, test.variableDeclaration1);
-            });
 
-            it('should replace the assignment expression with a var in to\'s parent with a _r = last() and 2 splits with no vars', function(){
-                var expressionCopy = _.cloneDeep(test.expressionStatement);
-                test.assignmentParent.unshift(test.expressionStatement);
-                testStartEndFirstTime(test.expressionStatement, expressionCopy);
-            });
         });
     });
 }
@@ -682,7 +753,7 @@ var resetTestData = (function reset(){
         loc: test.loc3 
     }
 
-    // Used to build addSplittingVariables tests
+    // Used to build splitCallAssignment tests
     test.expressionStatement = {
         type: "ExpressionStatement",
         expression: {
