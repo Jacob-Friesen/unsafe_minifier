@@ -219,6 +219,23 @@ module.exports = function(callback){
                 mergeFunction.isDuplicateInsert.restore();
             }
 
+            function testParentRemoval(parent){
+                stub(mergeFunction, "isDuplicateInsert").returns(false);
+
+                var originalLength = test.blockBodyParent2.body.length;
+                assert.isTrue(mergeFunction.mergeFunctions(test.functionDeclaration, _.cloneDeep(test.functionDeclaration), parent));
+
+                // The parent's array is smaller if the object was removed and does not contain the object
+                assert.equal( test.blockBodyParent2.body.length, originalLength - ((u.enu(parent)) ? 0 : 1) );
+                assert.equal(u.enu(parent), _.some(test.blockBodyParent2.body, function(item){
+                    return _.isEqual(item, test.functionDeclaration);
+                }));
+
+                mergeFunction.isDuplicateInsert.restore();
+
+                return testParentRemoval;
+            }
+
             it('should do nothing and return false when both variables sent in are enu', function(){
                 (function merge(to, from){
                     assert.isFalse(mergeFunction.mergeFunctions(to, from));
@@ -342,17 +359,53 @@ module.exports = function(callback){
                 mergeFunction.isDuplicateInsert.restore();
             });
 
-            it('should remove from from its parent', function(){
-                stub(mergeFunction, "isDuplicateInsert").returns(false);
+            it('should not remove from from its parent, when fromParent is enu', function(){
+                testParentRemoval()(null)({});
+            });
 
-                var original = _.cloneDeep(test.functionDeclaration);
-                assert.isTrue(mergeFunction.mergeFunctions(test.functionDeclaration, original));
+            it('should remove from from its parent when fromParent is specified', function(){
+                testParentRemoval(test.blockBodyParent2);
+            });
+        });
 
-                test.blockBodyParent2.body.forEach(function(item){
-                    assert.notDeepEqual(item, original);
-                });
+        describe('#findObjectName()', function(){
+            beforeEach(function(){
+                test.level3 = {
+                    object: {
+                        object: test.undefined
+                    }
+                }
+            });
 
-                mergeFunction.isDuplicateInsert.restore();
+            it('should return an empty string if the object sent in is enu', function(){
+                assert.equal(mergeFunction.findObjectName(), '');
+                assert.equal(mergeFunction.findObjectName(null), '');
+                assert.equal(mergeFunction.findObjectName({}), '');
+            });
+
+            it('should return the object name one level deep', function(){
+                assert.equal(mergeFunction.findObjectName({name: 'test'}), 'test');
+            });
+
+            it('should return an empty string if there is no name or object property at one level deep', function(){
+                assert.equal(mergeFunction.findObjectName({unrelated: 'test'}), '');
+            });
+
+            it('should return an empty string if object is enu 3 levels deep', function(){
+                (function test(){
+                    assert.equal(mergeFunction.findObjectName(test.level3), '');
+                    return test;
+                })()(test.level3.object = test.undefined)(test.level3.object = {});
+            });
+
+            it('should return an empty string if there is no name or object property at one 3 levels deep', function(){
+                test.level3.object = {unrelated: 'test'}; 
+                assert.equal(mergeFunction.findObjectName(test.level3), '');
+            });
+
+            it('should return the name at 3 levels deep', function(){
+                test.level3.object = {name: 'test'}; 
+                assert.equal(mergeFunction.findObjectName(test.level3), 'test');
             });
         });
 
@@ -365,6 +418,11 @@ module.exports = function(callback){
 
             it('should be able to get an AssignmentExpression\'s name', function(){
                 assert.equal(mergeFunction.getVariableName(test.assignmentExpression), test.assignmentExpression.left.name);
+            });
+
+            it('should be able to get the name of a AssignmentExpression\'s that has a nested object', function(){
+                assert.equal(mergeFunction.getVariableName(test.assignmentExpressionNestedObject), 
+                    test.assignmentExpressionNestedObject.left.object.name);
             });
 
             it('should be able to get an ExpressionStatement\s name', function(){
@@ -440,7 +498,7 @@ module.exports = function(callback){
             });
 
             describe('splitting variables for the first time', function(){
-                // Tests first time split by to being at the start then end of it's parent array, uses assignmentParent
+                // Tests first time sptest.assignmentExpressionlit by to being at the start then end of it's parent array, uses assignmentParent
                 function testStartEndFirstTime(to, from){
                     var originalTo = _.cloneDeep(to);
                         originalFrom = _.cloneDeep(from)
@@ -495,15 +553,6 @@ module.exports = function(callback){
                     mergeFunction.splitCallAssignment(position, to, from, test.assignmentParent);
                 }
 
-                // Insert the specified to at the start/end of assignment parent, the split it by giving a from (deep copy) of itself
-                function insertSplitAtb(start, to, from){
-                    var method = (start) ? 'unshift' : 'push';
-                    test.assignmentParent[method](_.cloneDeep(to));
-
-                    var position = (start) ? 0 : test.assignmentParent.length - 1;
-                    mergeFunction.splitCallAssignment(position, _.cloneDeep(to), _.cloneDeep(from), test.assignmentParent);
-                }
-
                 // Checks if the correct variables were assigned in a first time split
                 function testMultiSplit(to, from, start){
                     insertSplitAt(start, to, from);
@@ -549,6 +598,67 @@ module.exports = function(callback){
 
 
         });
+
+        describe('#mergeCalls()', function(){
+            function testArgs(to, from, shouldBe){
+                mergeFunction.mergeCalls(to, test.blockBodyParent, test.assignmentExpression, test.assignmentParent,
+                                         from, test.blockBodyParent, null, true);
+                assert.deepEqual(to.arguments, shouldBe);
+            }
+
+            beforeEach(function(){
+                test.notTo = _.partialRight(mergeFunction.mergeCalls, test.assignmentExpression, test.assignmentParent, 
+                    test.callExpression2, test.blockBodyParent);
+                test.beforeFrom = _.partial(mergeFunction.mergeCalls, test.callExpression2, test.blockBodyParent,
+                    test.assignmentExpression, test.assignmentParent);
+            });
+
+            // These will not cover every null case but represent a large enough sample to cover everything
+            it('should do nothing if to or to\'s parent are enu', function(){
+                (function merge(to, toParent){
+                    test.notTo(to, toParent);
+                    return merge;
+                })()(null)(null, {})(null, null)({})({}, null)({}, {});
+            });
+
+            // fromParent checking tests are done later with the deletion from fromParent tests
+            it('should do nothing if from is enu', function(){
+                (function merge(from){
+                    test.beforeFrom(from, test.blockBodyParent);
+                    return merge;
+                })()(null)({});
+            });
+
+            it('should throw an error if either from or to have either no arguments object or an undefined one', function(){
+                (function mergeArgTest(object, testCall){
+                    expect(function(){
+                        testCall(object, test.assignmentParent);
+                    }).to.throw(mergeFunction.argsCouldntCopy(object, test.callExpression2));
+
+                    return mergeArgTest;
+                })({red: 'test'}, test.notTo)({arguments: null}, test.notTo)// to tests
+                ({red: 'test'}, test.beforeFrom)({arguments: null}, test.beforeFrom)// from tests
+            })
+
+            it('should append no arguments to to when both calls have no arguments', function(){
+                testArgs(test.callExpression2, test.callExpression2, []);
+            })
+
+            it('should append no arguments to to when only to has arguments', function(){
+                testArgs(test.callExpression1, test.callExpression2, test.callExpression1.arguments);
+            })
+
+            it('should append from\'s arguments to to when only from has arguments', function(){
+                testArgs(test.callExpression2, test.callExpression1, test.callExpression1.arguments);
+            })
+
+            it('should prepend from\'s arguments to to\'s when both have arguments', function(){
+                var modified = _.cloneDeep(test.callExpression1);
+                modified.arguments[0].name += 'modified';
+
+                testArgs(modified, test.callExpression1, [test.callExpression1.arguments[0], modified.arguments[0]]);
+            })
+        });
     });
 }
 
@@ -557,7 +667,7 @@ var test = {};
 var resetTestData = (function reset(){
     test = {};
 
-    // Used for removeFromParentArray tests and to build removeFromParent tests
+    // Used for removeFromParentArray tests and mergeCall tests and to build removeFromParent tests
     test.loc1 = { 
         start: { line: 145, column: 8 },
         end: { line: 147, column: 5 }  
@@ -646,6 +756,23 @@ var resetTestData = (function reset(){
         },
         right: test.callExpression1,
         loc: test.loc1
+    }
+
+    test.assignmentExpressionNestedObject = Object.nu(test.assignmentExpression);
+    test.assignmentExpressionNestedObject.left = { 
+        type: 'MemberExpression',
+        computed: false,
+        object: { 
+            type: 'Identifier',
+            name: 'Expr',
+            loc: test.loc1
+        },
+        property: {
+            type: 'Identifier',
+            name: 'pseudos',
+            loc: test.loc1
+        },
+        loc: test.loc1 
     }
 
     test.functionDeclaration = {
@@ -753,7 +880,7 @@ var resetTestData = (function reset(){
         loc: test.loc3 
     }
 
-    // Used to build splitCallAssignment tests
+    // Used to build splitCallAssignment tests and mergeCalls 
     test.expressionStatement = {
         type: "ExpressionStatement",
         expression: {
@@ -821,6 +948,8 @@ var resetTestData = (function reset(){
         test.variableDeclaration1,
         test.expressionStatement
     ]
+
+    // Used for testing mergeCalls
     
     return reset;
 })();

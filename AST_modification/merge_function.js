@@ -12,6 +12,7 @@ module.exports = function mergeFunction(){
     var merges = [];// List of merged functions in string form, used to check if I am adding a duplicate function body
     this.merges = merges;
     this.returnHandler = new ReturnHandler();
+    var _this = this;
     
     
     // Merges the second call into the first and the second function into the first
@@ -19,7 +20,10 @@ module.exports = function mergeFunction(){
         mergeName = callMergeTo.simpleName + '-' + callMergeFrom.simpleName;
         
         var twoReturns = this.mergeFunctions(functionMergeTo.data, functionMergeFrom.data, functionMergeFrom.parent);
-        this.mergeCalls(callMergeTo, callMergeFrom, twoReturns);
+
+        // Too many vars, make sure to change...
+        callMergeTo.assignmentExp = this.mergeCalls(callMergeTo.data, callMergeTo.parent, callMergeTo.assignmentExp, callMergeTo.assignmentExpParent,
+            callMergeFrom.data, callMergeFrom.parent, callMergeFrom.assignmentExp, twoReturns);
         
         merges.push(mergeName);
         
@@ -27,62 +31,71 @@ module.exports = function mergeFunction(){
     }
     
     // Merges calls:
-    // 1. Copy arguments of mergeInto to mergeTo
+    // 1. Copy arguments of from to to
     // 2. If both function calls are part of an assignment must assign to both variables from a function returns false if there was an error
     // 3. If first function call has an expression must make second one have same expression with variable
     // 4. Erase the function call merging to
-    this.mergeCalls = function(mergeTo, mergeFrom, twoReturns){
+    // Returns the modified version of to's assignment expression
+    this.argsCouldntCopy = function(to, from){
+        return "Error: Second calls arguments could not be copied into the first: \n"  + to + '\n' + from;
+    }
+    this.mergeCalls = function(to, toParent, toAssignment, toAssignmentParent, from, fromParent, fromAssignment, twoReturns){
+        if (u.enu(to) || u.enu(toParent) || u.enu(from))
+            return true;
+
+        twoReturns = twoReturns || false;
         var removeFrom = true;
         
         // 1. Move any arguments, to prevent (╯°□°）╯︵ ┻━┻ only allow literals (e.g. 1 or 'a' or a, no function arguments etc.) to be copied.
-        if (u.hasOwnPropertyChain(mergeTo.data, 'arguments') && u.hasOwnPropertyChain(mergeFrom.data, 'arguments')){
-            if (!_.find(mergeFrom.data.arguments, function(item){ return item.type !== 'Literal' && item.type !== 'Identifier'})){
-                _.each(mergeFrom.data.arguments.reverse(), function(item){
-                    mergeTo.data.arguments.unshift(item);
+        if (u.hasOwnPropertyChain(to, 'arguments') && u.hasOwnPropertyChain(from, 'arguments')){
+            if (!_.find(from.arguments, function(item){ return item.type !== 'Literal' && item.type !== 'Identifier'})){
+                _.each(from.arguments.reverse(), function(item){
+                    to.arguments.unshift(item);
                 });
-                mergeFrom.data.arguments.reverse();
+                from.arguments.reverse();
             }
         } 
         else
-            throw("Error: Second calls arguments could not be copied into the first");
+            throw(_this.argsCouldntCopy(to, from));
         
         // 2. If both functions are part of an assignment must make sure both assigned to variables get what they need for the function.
-        if (mergeTo.assignmentExp !== null && mergeFrom.assignmentExp !== null && twoReturns){
-            var loopingItem = mergeTo.assignmentExpParent;
-            if(u.hasOwnPropertyChain(mergeTo.assignmentExpParent, 'body'))
-                loopingItem = mergeTo.assignmentExpParent.body;
+        if (toAssignment !== null && fromAssignment !== null && twoReturns){
+            var loopingItem = toAssignmentParent;
+            if(u.hasOwnPropertyChain(toAssignmentParent, 'body'))
+                loopingItem = toAssignmentParent.body;
             
             // Loop through expression parent until expression is located, the index is where to insert to after.    
             _.find(loopingItem, function(item, index){
-                if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && item.loc.start.line === mergeTo.assignmentExp.loc.start.line){
-                    this.splitCallAssignment(index, mergeTo.assignmentExp, mergeFrom.assignmentExp, loopingItem);
+                if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && item.loc.start.line === toAssignment.loc.start.line){
+                    this.splitCallAssignment(index, toAssignment, fromAssignment, loopingItem);
                     return true;
                 }
             });
         }
-        // 3. If the first function is an assignment must make second function an assignment and then copy over the variables
-        else if (mergeFrom.assignmentExp !== null){
+        // 3. If from has an assignment must give to an assignment and copy over the variables
+        else if (fromAssignment !== null){
             // Add To's call expression to from's assignment expression
-            if (mergeFrom.assignmentExp.type === 'AssignmentExpression')
-                mergeFrom.assignmentExp.right = mergeTo.data;
+            if (fromAssignment.type === 'AssignmentExpression')
+                fromAssignment.right = to;
             else
-                mergeFrom.assignmentExp.declarations[0].init = mergeTo.data;
+                fromAssignment.declarations[0].init = to;
             
-            // Give to from's assignment expression, assuming mergeTo's immediate parent is an array
-            _.find(mergeTo.parent, function(obj, index){
-                if (u.hasOwnPropertyChain(obj, 'loc', 'start', 'line') && u.hasOwnPropertyChain(mergeTo.data, 'loc', 'start', 'line')
-                && obj.loc.start.line === mergeTo.data.loc.start.line){
-                    if (mergeFrom.assignmentExp.type === 'AssignmentExpression'){
-                        obj.expression = mergeFrom.assignmentExp;
+            // Give to from's assignment expression, assuming to's immediate parent is an array
+            _.find(toParent, function(obj, index){
+                if (u.hasOwnPropertyChain(obj, 'loc', 'start', 'line') && u.hasOwnPropertyChain(to, 'loc', 'start', 'line')
+                && obj.loc.start.line === to.loc.start.line){
+                    if (fromAssignment.type === 'AssignmentExpression'){
+                        obj.expression = fromAssignment;
                     }
                     else{
-                        obj = mergeFrom.assignmentExp;
-                        if (_.isArray(mergeTo.parent)) this.removeFromParentArray(mergeTo.data, mergeTo.parent);
+                        obj = fromAssignment;
+                        if (_.isArray(toParent)) this.removeFromParentArray(to, toParent);
                         removeFrom = false;
                     }
-                    // mergeTo now is an assignment expression
-                    mergeTo.assignmentExp = mergeFrom.assignmentExp;
-                    mergeTo.assignmentExp.loc.start.line = Number(mergeTo.assignmentExp.loc.start.line) + 1;
+
+                    // to now is the modified version of from's assignment expression
+                    toAssignment = fromAssignment;
+                    toAssignment.loc.start.line = Number(toAssignment.loc.start.line) + 1;
                     
                     return true;
                 }
@@ -90,9 +103,9 @@ module.exports = function mergeFunction(){
         }
         
         // 4. Remove from function call
-        if (removeFrom) this.removeFromParent(mergeFrom.data, mergeFrom.parent);
+        if (removeFrom) this.removeFromParent(from, fromParent);
         
-        return true;
+        return toAssignment;
     }
     
     // Function will be modified to return the two variables as an array, so must extract each individually which is what this does. Uses the to and
@@ -167,10 +180,21 @@ module.exports = function mergeFunction(){
         if (u.enu(object))
             return '';
         if (object.type === 'AssignmentExpression')
-            return object.left.name;
+            return this.findObjectName(object.left)
         else if (object.type === 'ExpressionStatement')
             return object.expression.left.name;
         return 'var ' + object.declarations[0].id.name;
+    }
+
+    // keeps on going down the first set of objects until a name is reached or undefined in which '' is returned
+    this.findObjectName = function findObjectName(object){
+        if (!u.enu(object)){
+            if (object.name) 
+                return object.name;
+            else if (object.object)
+                return findObjectName(object.object);
+        }
+        return '';
     }
     
     // Merges function declarations, returns boolean for if both functions had a return value
