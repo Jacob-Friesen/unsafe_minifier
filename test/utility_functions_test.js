@@ -79,7 +79,7 @@ module.exports = function(callback){
 
         });
 
-        describe('#nullOrUndefined', function(){
+        describe('#nullOrUndefined()', function(){
             it('should return true when a variable is not defined', function(){
                 var test = {};
                 assert.isTrue(u.nullOrUndefined(test.test));
@@ -96,7 +96,7 @@ module.exports = function(callback){
             })
         });
 
-        describe('#enu', function(){
+        describe('#enu()', function(){
             it('should return true when a variable is not defined', function(){
                 var test = {};
                 assert.isTrue(u.enu(test.test));
@@ -120,7 +120,7 @@ module.exports = function(callback){
             })
         });
 
-        describe('#hasOwnPropertyChain', function(){
+        describe('#hasOwnPropertyChain()', function(){
             var test = {};
             beforeEach(function(){
                 test = {};
@@ -168,7 +168,74 @@ module.exports = function(callback){
             });
         });
 
-        describe('getJSONFile', function(){
+        describe('#sameLine()', function(){
+
+            function testObjectEmpty(first){
+                var notEmpty = {
+                    loc: {
+                        start: {
+                            line: 100
+                        }
+                    }
+                };
+
+                [
+                    {loc: {}},
+                    {loc: {start: {}}},
+                    {loc: {start: {line: {}}}}
+                ].forEach(function compare(empty){
+                    if (first)
+                        assert.isFalse(u.sameLine(empty, notEmpty));
+                    else
+                        assert.isFalse(u.sameLine(notEmpty, empty));
+
+                    return compare;
+                });
+            }
+
+            function createValidLineObject(){
+                return {
+                    loc: {
+                        start: {
+                            line: 100
+                        }
+                    }
+                };
+            }
+
+            it('should return false when both objects line numbers cannot be accessed', function(){
+                (function compare(object1, object2){
+                    assert.isFalse(u.sameLine(object1, object2));
+                    return compare;
+                })()
+                ({loc: {}}, {loc: {}})
+                ({loc: {start: {}}}, {loc: {start: {}}})
+                ({loc: {start: {line: {}}}}, {loc: {start: {line: {}}}});
+            });
+
+            it('should return false when object 1\'s line numbers cannot be accessed', function(){
+                testObjectEmpty(true);
+            });
+
+            it('should return false when object 2\'s line numbers cannot be accessed', function(){
+                testObjectEmpty(false);
+            });
+
+            it('should return false when the objects line number are not equal', function(){
+                var object1 = new createValidLineObject(),
+                    object2 = new createValidLineObject();
+                object2.loc.start.line = 101;
+
+                assert.isFalse(u.sameLine(object1, object2));
+            });
+
+            it('should return true when the objects line number are equal', function(){
+                var object1 = new createValidLineObject();
+                assert.isTrue(u.sameLine(object1, object1));
+            });
+        });
+
+        describe('#getJSONFile()', function(){
             it('should return null when given nothing', function(){
                 assert.isNull(u.getJSONFile());
             });

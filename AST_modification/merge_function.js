@@ -8,12 +8,13 @@ var u = require('../utility_functions.js'),
 
 // Merges two function calls together, will also merge the corresponding function bodies.
 module.exports = function mergeFunction(){
-    var mergeName = null;// Tracks the current merge name for above
-    var merges = [];// List of merged functions in string form, used to check if I am adding a duplicate function body
+    var mergeName = null,// Tracks the current merge name for above
+        merges = [],// List of merged functions in string form, used to check if I am adding a duplicate function body
+        _this = this;
+
     this.merges = merges;
     this.returnHandler = new ReturnHandler();
-    var _this = this;
-    
+    this.SPLIT_VAR = '_r';
     
     // Merges the second call into the first and the second function into the first
     this.merge = function(callMergeTo, callMergeFrom, functionMergeTo, functionMergeFrom, callback){
@@ -32,9 +33,8 @@ module.exports = function mergeFunction(){
     
     // Merges calls:
     // 1. Copy arguments of from to to
-    // 2. If both function calls are part of an assignment must assign to both variables from a function returns false if there was an error
-    // 3. If first function call has an expression must make second one have same expression with variable
-    // 4. Erase the function call merging to
+    // 2. If from is part of an assignment make the necessary modifications to to
+    // 3. Erase the function call merging to
     // Returns the modified version of to's assignment expression
     this.argsCouldntCopy = function(to, from){
         return "Error: Second calls arguments could not be copied into the first: \n"  + to + '\n' + from;
@@ -58,58 +58,61 @@ module.exports = function mergeFunction(){
         else
             throw(_this.argsCouldntCopy(to, from));
         
-        // 2. If both functions are part of an assignment must make sure both assigned to variables get what they need for the function.
-        if (toAssignment !== null && fromAssignment !== null && twoReturns){
+        // 2. Change to's structure if from is part of an assignment
+        if (fromAssignment !== null)
+            toAssignment = this.copyFromAssignment(toAssignment, toAssignmentParent, fromAssignment, to, toParent, twoReturns);
+        
+        // 3. Remove from function call
+        this.removeFromParent(from, fromParent);
+        
+        return toAssignment;
+    }
+
+    // Updates to's assignment structure and data when from is an assignment. Returns the modified toAssignment.
+    this.copyFromAssignment = function(toAssignment, toAssignmentParent, fromAssignment, to, toParent, twoReturns){
+        // If both to and from are part of an assignment and both have returns, the returns must be combined
+        if (!enu(toAssignment) && twoReturns){
             var loopingItem = toAssignmentParent;
-            if(u.hasOwnPropertyChain(toAssignmentParent, 'body'))
-                loopingItem = toAssignmentParent.body;
+            if(u.hasOwnPropertyChain(loopingItem, 'body'))
+                loopingItem = loopingItem.body;
             
             // Loop through expression parent until expression is located, the index is where to insert to after.    
             _.find(loopingItem, function(item, index){
-                if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && item.loc.start.line === toAssignment.loc.start.line){
-                    this.splitCallAssignment(index, toAssignment, fromAssignment, loopingItem);
+                if (u.sameLine(item, toAssignment)){
+                    _this.splitCallAssignment(index, toAssignment, fromAssignment, loopingItem);
                     return true;
                 }
             });
         }
-        // 3. If from has an assignment must give to an assignment and copy over the variables
-        else if (fromAssignment !== null){
-            // Add To's call expression to from's assignment expression
+        // If from has an assignment must give to the contents of that assignment with to being initialized instead of from
+        else if (!enu(fromAssignment) && !enu(to) && !enu(toParent)){
+            // Add to's call expression to from's assignment expression
             if (fromAssignment.type === 'AssignmentExpression')
                 fromAssignment.right = to;
             else
                 fromAssignment.declarations[0].init = to;
             
-            // Give to from's assignment expression, assuming to's immediate parent is an array
-            _.find(toParent, function(obj, index){
-                if (u.hasOwnPropertyChain(obj, 'loc', 'start', 'line') && u.hasOwnPropertyChain(to, 'loc', 'start', 'line')
-                && obj.loc.start.line === to.loc.start.line){
-                    if (fromAssignment.type === 'AssignmentExpression'){
-                        obj.expression = fromAssignment;
-                    }
-                    else{
-                        obj = fromAssignment;
-                        if (_.isArray(toParent)) this.removeFromParentArray(to, toParent);
-                        removeFrom = false;
-                    }
+            // If from is an assignment expression give to it as to's expression
+            if (fromAssignment.type === 'AssignmentExpression'){
+                var loopingItem = toParent;
+                if(u.hasOwnPropertyChain(loopingItem, 'body'))
+                    loopingItem = loopingItem.body;
 
-                    // to now is the modified version of from's assignment expression
-                    toAssignment = fromAssignment;
-                    toAssignment.loc.start.line = Number(toAssignment.loc.start.line) + 1;
-                    
-                    return true;
-                }
-            });
+                _.find(loopingItem, function(obj){
+                    return u.sameLine(obj, to);
+                }).expression = fromAssignment;
+            }
+
+            // to now is the modified version of from's assignment expression
+            toAssignment = fromAssignment;
+            toAssignment.loc.start.line += 1;
         }
-        
-        // 4. Remove from function call
-        if (removeFrom) this.removeFromParent(from, fromParent);
-        
+
         return toAssignment;
     }
     
     // Function will be modified to return the two variables as an array, so must extract each individually which is what this does. Uses the to and
-    // from assignment expressions to get the right variables and puts them in to's parent. The index is to's location in it's parent.
+    // from assignment expressions to get the right variables and puts them in to's parent. The index is to's location in it's parent
     // e.g. with this return
     //    return [
     //        x * x,
@@ -121,7 +124,6 @@ module.exports = function mergeFunction(){
     // b = _r[1];
     //
     // Note: Will only work if parent is an array
-    this.splitVar = '_r';
     this.splitCallAssignment = function(index, to, from, toParent){
         if (u.nullOrUndefined(index) || u.enu(from) || u.enu(to) || u.enu(toParent))
             return true;
@@ -130,12 +132,12 @@ module.exports = function mergeFunction(){
             varTo = this.getVariableName(to);
         
         // to already split variables with another function, so just add from's variable assignment i.e. <fromVar> = _r[<last r>]
-        if (varTo.indexOf(this.splitVar) >= 0){
+        if (varTo.indexOf(this.SPLIT_VAR) >= 0){
             // Increment each index of the already inserted splitting variables
             if (u.hasOwnPropertyChain(toParent, (index + 1) + "", "body")){
 
                 var lastItem = _.last(toParent[index + 1].body);
-                for (var i = 1; this.getVariableName(lastItem).indexOf(this.splitVar >= 0); i += 1){
+                for (var i = 1; this.getVariableName(lastItem).indexOf(this.SPLIT_VAR >= 0); i += 1){
                     // part to increment depends on if there is a var in front or not
                     if (lastItem.type === 'ExpressionStatement')
                         lastItem.expression.right.property.value += 1; 
@@ -150,23 +152,23 @@ module.exports = function mergeFunction(){
             }
             
             // Insert the from argument before all the previously inserted arguments
-            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = '+this.splitVar+'[0];', {loc: false}));
+            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = '+this.SPLIT_VAR+'[0];', {loc: false}));
         }
         // Splitting variables for the first time
         else{    
             // Add the two new return splits to the place after the call
-            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = ' + this.splitVar+'[0];', {loc: false}));
-            toParent.splice(index + 2, 0, esprima.parse(varTo + ' = ' + this.splitVar+'[1];', {loc: false}));
+            toParent.splice(index + 1, 0, esprima.parse(varFrom + ' = ' + this.SPLIT_VAR+'[0];', {loc: false}));
+            toParent.splice(index + 2, 0, esprima.parse(varTo + ' = ' + this.SPLIT_VAR+'[1];', {loc: false}));
             
             // Replace variable name of array returned with the split var, make sure to use a var so no global variable is set
             if (varTo.indexOf('var') < 0){
                 if (to.expression)
-                    to.expression.left.name = this.splitVar;
+                    to.expression.left.name = this.SPLIT_VAR;
                 else
-                    to.left.name = this.splitVar;
+                    to.left.name = this.SPLIT_VAR;
             }
             else
-                to.declarations[0].id.name = this.splitVar;
+                to.declarations[0].id.name = this.SPLIT_VAR;
             
             toParent.splice(index, 0, to);
             toParent.remove(index);
@@ -200,7 +202,7 @@ module.exports = function mergeFunction(){
     // Merges function declarations, returns boolean for if both functions had a return value
     // 1. Concatenate parameter lists
     // 2. Insert second functions body into first
-    // 3. Delete second function decleration (from's parent is needed to guarantee this)
+    // 3. Delete second function declaration (from's parent is needed to guarantee this)
     this.paramCouldntCopy = function(to, from){
         return "Error: Second function parameters could not be copied into the first: \n"  + to + '\n' + from;
     }
@@ -274,7 +276,7 @@ module.exports = function mergeFunction(){
         }
         // Can't get the parent of the expression statement, but can still make function expression null if the item is to be deleted
         else if (u.hasOwnPropertyChain(parent, 'type') && parent.type === 'ExpressionStatement'){
-            if (item.loc.start.line === parent.expression.right.loc.start.line)
+            if (u.sameLine(item, parent.expression.right))
                 parent.expression.right = AST_structure.nullLiteral;
         }
             
@@ -284,8 +286,7 @@ module.exports = function mergeFunction(){
     // Finds the item to delete and removes that item from the parent. (Always returns true)
     this.removeFromParentArray = function(toRemove, parentArray){
         _.each(parentArray, function(item, index){
-            if (u.hasOwnPropertyChain(item, 'loc', 'start', 'line') && u.hasOwnPropertyChain(toRemove, 'loc', 'start', 'line')
-                && item.loc.start.line === toRemove.loc.start.line){
+            if (u.sameLine(item, toRemove)){
                 parentArray.remove(index);
                 return true;
             }

@@ -55,6 +55,12 @@ module.exports = (function(){
             return true;
         }(item, args);
     }
+
+    // Checks if both the starting lines of the 2 objects are the same (via loc.start.line)
+    this.sameLine = function(object1, object2){
+        return _this.hasOwnPropertyChain(object1, 'loc', 'start', 'line') && _this.hasOwnPropertyChain(object2, 'loc', 'start', 'line') &&
+               object1.loc.start.line === object2.loc.start.line;
+    }
     
     // Since JSON files are inserted into multiple times they must be reread by treating the file as an array of arrays object. Each array had a
     // comma inserted after itself. So the last comma must be eliminated then the code wrapped in an object to parse. Finally, the arrays are merged
