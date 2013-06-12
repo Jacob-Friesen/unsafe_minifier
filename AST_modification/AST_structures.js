@@ -1,7 +1,4 @@
-var u = require('../utility_functions.js');
-
-// Return an inherited object so new properties won't affect other used copies of this object
-module.exports = Object.nu({
+module.exports = {
     nullLiteral: {
         "type": "Literal",
         "value": null,
@@ -22,4 +19,4 @@ module.exports = Object.nu({
         "type": "ArrayExpression",
         "elements": {}
     }
-})
+}

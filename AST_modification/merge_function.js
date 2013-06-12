@@ -59,7 +59,7 @@ module.exports = function mergeFunction(){
             throw(_this.argsCouldntCopy(to, from));
         
         // 2. Change to's structure if from is part of an assignment
-        if (fromAssignment !== null)
+        if (!u.enu(fromAssignment))
             toAssignment = this.copyFromAssignment(toAssignment, toAssignmentParent, fromAssignment, to, toParent, twoReturns);
         
         // 3. Remove from function call
