@@ -400,16 +400,17 @@ var test = {};
         loc: test.loc3
     }
 
-    test.fullItem1 = {
-        data: test.callExpression2,
-        parent: test.parentArray
-        // there is more properties but they are irrelevant
+    test.functionWrapper = {
+        data: test.functionDeclaration,
+        parent: test.parentArray2
     }
 
-    test.fullItem2 = {
-        data: test.emptyFunctionExpression,
-        parent: test.blockBodyParent
-        // there is more properties but they are irrelevant
+    test.callWrapper = {
+        data: test.callExpression2,
+        parent: test.blockBodyParent,
+        assignmentExp: test.assignmentExpression,
+        assignmentExpParent: test.assignmentParent,
+        simpleName: 'testCall'
     }
 
     test.resetTestData = resetTestData;

@@ -2,18 +2,20 @@ var _ = require('lodash'),
     chai = require('chai'),
     sinon = require('sinon'),
     stub = sinon.stub,
+    spy = sinon.spy,
     assert = chai.assert,
     expect = chai.expect;
 
 var MergeFunction = require('../../AST_modification/merge_function.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     test = require('../test_data.js'),
-    mergeFunction = MergeFunction,
     u = require('../../utility_functions.js');
+
 module.exports = function(callback){
     describe('mergeFunction', function() {
         beforeEach(function(){
             test = test.resetTestData();
+            mergeFunction = MergeFunction();
         });
 
         after(function(){
@@ -38,30 +40,30 @@ module.exports = function(callback){
             });
 
             it('should return true when only one function set has been sent in', function() {
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, {}, {}, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, test.functionWrapper, test.functionWrapper, function(){});
                 assert.isTrue(mergeFunction.isDuplicateInsert());
             });
 
             it('should return false when a second second function set sent in is different and merges.push has not been reached', function() {
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, {}, {}, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, test.functionWrapper, test.functionWrapper, function(){});
 
                 stub(mergeFunction.merges, "push");
 
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, {}, {}, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, test.functionWrapper, test.functionWrapper, function(){});
                 assert.isFalse(mergeFunction.isDuplicateInsert());
 
                 mergeFunction.merges.push.restore();
             });
 
             it('should return true when a second second function set sent in is different and merges.push has been reached', function() {
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, {}, {}, function(){});
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, {}, {}, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 2'}, test.functionWrapper, test.functionWrapper, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, test.functionWrapper, test.functionWrapper, function(){});
                 assert.isTrue(mergeFunction.isDuplicateInsert());
             });
 
             it('should return true when a second second function set sent matches a later set and merges.push has not been reached', function() {
                 (function merge(callTo, callFrom){
-                    mergeFunction.merge(callTo, callFrom, {}, {}, function(){});
+                    mergeFunction.merge(callTo, callFrom, test.functionWrapper, test.functionWrapper, function(){});
                     return merge;
                 })({simpleName: 'call 1'}, {simpleName: 'call 2'})
                   ({simpleName: 'call 1'}, {simpleName: 'call 3'}),
@@ -70,7 +72,7 @@ module.exports = function(callback){
 
                 stub(mergeFunction.merges, "push");
 
-                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, {}, {}, function(){});
+                mergeFunction.merge({simpleName: 'call 1'}, {simpleName: 'call 3'}, test.functionWrapper, test.functionWrapper, function(){});
                 assert.isTrue(mergeFunction.isDuplicateInsert());
 
                 mergeFunction.merges.push.restore();
@@ -156,29 +158,29 @@ module.exports = function(callback){
             // A little repetitive, but metaprogramming to make these 6 more DRY would be overkill
             describe('parent is an array', function(){
                 it('should remove nothing when the specified item is not in the parent', function() {
-                    arrayNothingTest(test.fullItem1.parent);
+                    arrayNothingTest(test.parentArray);
                 });
 
                 it('should remove the specified item when the parent has length > 1', function() {
-                    arrayRemoveTest(test.fullItem1.parent);
+                    arrayRemoveTest(test.parentArray);
                 });
 
                 it('should remove the specified item when the parent has length < 1 and insert and empty element', function() {
-                    arrayEmptyRemoveTest(test.fullItem1.parent)
+                    arrayEmptyRemoveTest(test.parentArray)
                 });
             });
 
             describe('parent is an object containing a body property that is an array', function(){
                 it('should remove nothing when the specified item is not in the parent', function() {
-                    arrayNothingTest(test.fullItem2.parent);
+                    arrayNothingTest(test.blockBodyParent);
                 });
 
                 it('should remove the specified item when the parent has length > 1', function() {
-                    arrayRemoveTest(test.fullItem2.parent);
+                    arrayRemoveTest(test.blockBodyParent);
                 });
 
                 it('should remove the specified item when the parent has length < 1 and insert and empty element', function() {
-                    arrayEmptyRemoveTest(test.fullItem1.parent)
+                    arrayEmptyRemoveTest(test.blockBodyParent)
                 });
             });
 
@@ -851,6 +853,106 @@ module.exports = function(callback){
                 assert.isUndefined(_.find(fromParent.body, function(item){
                     return _.isEqual(item, from);
                 }));
+            });
+        });
+
+        describe('#merge()', function() {
+            function testCallbackOnly(testCalls){
+                (function merge(to, from){
+                    test.called = false;
+                    if (testCalls)
+                        mergeFunction.merge(to, from, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                    else
+                        mergeFunction.merge(test.callWrapper, test.callWrapper, to, from, test.mergeCallback);
+                    assert.isTrue(test.called);
+
+                    assert.isUndefined(_.find(test.calls, function(call){
+                        return call.called;
+                    }));
+
+                    return merge;
+                })()(test.undefined, null)(test.undefined, {})
+                (null)(null, null)(null, {})
+                ({})({}, null)({}, {});
+            }
+
+            beforeEach(function(){
+                test.calls = [
+                    spy(mergeFunction, 'mergeFunctions'),
+                    spy(mergeFunction, 'mergeCalls'),
+                    spy(mergeFunction.merges, 'push')
+                ];
+
+                test.called = false;
+                test.mergeCallback = function(){
+                    test.called = true;
+                }
+            });
+
+            afterEach(function(){
+                mergeFunction.mergeFunctions.restore();
+                mergeFunction.mergeCalls.restore();
+                if (mergeFunction.merges.push.restore)
+                    mergeFunction.merges.push.restore();
+            })
+
+            it('should do nothing to either function wrapper when one is enu and callback', function(){
+                testCallbackOnly(true);
+            });
+
+            it('should do nothing to either call wrapper when one is enu and callback', function(){
+                testCallbackOnly(false);
+            });
+
+            it('should send in the appropriate parameters for mergeFunctions', function(){
+                var functionWrapper1 = _.cloneDeep(test.functionWrapper);
+
+                test.functionWrapper.data.id = 1;// just to make it not an exact copy of the above
+                var functionWrapper2 = _.cloneDeep(test.functionWrapper);
+
+                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                test.calls[0].calledWith(functionWrapper1.data, functionWrapper2.data, functionWrapper2.parent);
+
+                assert.isTrue(test.called);
+            });
+
+            it('should send in the appropriate parameters for mergeCalls', function(){
+                var functionWrapper1 = _.cloneDeep(test.functionWrapper);
+
+                test.functionWrapper.data.id = 1;// just to make it not an exact copy of the above
+                var functionWrapper2 = _.cloneDeep(test.functionWrapper);
+
+                var toSend = {
+                    to: test.callWrapper.data,
+                    toParent: test.callWrapper.parent,
+                    toAssignment: test.callWrapper.assignmentExp,
+                    toAssignmentParent: test.callWrapper.assignmentExpParent,
+                    from: test.callWrapper.data,
+                    fromParent: test.callWrapper.parent,
+                    fromAssignment: test.callWrapper.assignmentExp,
+                    bothHaveReturns: false
+                }
+
+                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                test.calls[1].calledWith(toSend);
+
+                assert.isTrue(test.called);
+            });
+
+            it('should add the correct name pair from the call wrapper into the merges list', function(){
+                mergeFunction.merges.push.restore();
+
+                test.callWrapper.simpleName = 'test1';
+                test.callWrapper2 = _.cloneDeep(test.callWrapper);
+                test.callWrapper2.simpleName = 'test2';
+
+                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                assert.deepEqual(mergeFunction.merges, ['test1-test2'])
+
+                test.callWrapper.simpleName = 'test3';
+                test.callWrapper2.simpleName = 'test4';
+                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                assert.deepEqual(mergeFunction.merges, ['test1-test2', 'test3-test4']);
             });
         });
     });

@@ -17,19 +17,22 @@ module.exports = function mergeFunction(){
     this.SPLIT_VAR = '_r';
     
     // Merges the second call into the first and the second function into the first
-    this.merge = function(callMergeTo, callMergeFrom, functionMergeTo, functionMergeFrom, callback){
-        mergeName = callMergeTo.simpleName + '-' + callMergeFrom.simpleName;
-        
-        var bothHaveReturns = this.mergeFunctions(functionMergeTo.data, functionMergeFrom.data, functionMergeFrom.parent);
+    this.merge = function(callTo, callFrom, functionTo, functionFrom, callback){
+        if (enu(functionTo) || enu(functionFrom) || enu(callTo) || enu(callFrom))
+            return callback();
 
-        callMergeTo.assignmentExp = this.mergeCalls({
-            to: callMergeTo.data,
-            toParent: callMergeTo.parent,
-            toAssignment: callMergeTo.assignmentExp,
-            toAssignmentParent: callMergeTo.assignmentExpParent,
-            from: callMergeFrom.data,
-            fromParent: callMergeFrom.parent,
-            fromAssignment: callMergeFrom.assignmentExp,
+        mergeName = callTo.simpleName + '-' + callFrom.simpleName;
+        
+        var bothHaveReturns = this.mergeFunctions(functionTo.data, functionFrom.data, functionFrom.parent);
+
+        callTo.assignmentExp = this.mergeCalls({
+            to: callTo.data,
+            toParent: callTo.parent,
+            toAssignment: callTo.assignmentExp,
+            toAssignmentParent: callTo.assignmentExpParent,
+            from: callFrom.data,
+            fromParent: callFrom.parent,
+            fromAssignment: callFrom.assignmentExp,
             bothHaveReturns: bothHaveReturns
         });
         
