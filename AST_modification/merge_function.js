@@ -20,95 +20,136 @@ module.exports = function mergeFunction(){
     this.merge = function(callMergeTo, callMergeFrom, functionMergeTo, functionMergeFrom, callback){
         mergeName = callMergeTo.simpleName + '-' + callMergeFrom.simpleName;
         
-        var twoReturns = this.mergeFunctions(functionMergeTo.data, functionMergeFrom.data, functionMergeFrom.parent);
+        var bothHaveReturns = this.mergeFunctions(functionMergeTo.data, functionMergeFrom.data, functionMergeFrom.parent);
 
-        // Too many vars, make sure to change...
-        callMergeTo.assignmentExp = this.mergeCalls(callMergeTo.data, callMergeTo.parent, callMergeTo.assignmentExp, callMergeTo.assignmentExpParent,
-            callMergeFrom.data, callMergeFrom.parent, callMergeFrom.assignmentExp, twoReturns);
+        callMergeTo.assignmentExp = this.mergeCalls({
+            to: callMergeTo.data,
+            toParent: callMergeTo.parent,
+            toAssignment: callMergeTo.assignmentExp,
+            toAssignmentParent: callMergeTo.assignmentExpParent,
+            from: callMergeFrom.data,
+            fromParent: callMergeFrom.parent,
+            fromAssignment: callMergeFrom.assignmentExp,
+            bothHaveReturns: bothHaveReturns
+        });
         
         merges.push(mergeName);
         
         return callback();
     }
     
-    // Merges calls:
+    // Accepts an object:
+    // {
+    //      -- These must be defined and not empty    
+    //      to: <object>,
+    //      toParent: <object>,
+    //      from: <object>,
+    //      -- This must not be empty if from is to be properly removed from it's parent
+    //      fromParent: <object>,
+    //      -- These are only required if from has an assignment
+    //      toAssignment: <object>,
+    //      toAssignmentParent: <object>,
+    //      fromAssignment: <object>,
+    //      bothHaveReturns: true/false
+    // }
+    //
+    // Merges calls by following these steps:
     // 1. Copy arguments of from to to
     // 2. If from is part of an assignment make the necessary modifications to to
-    // 3. Erase the function call merging to
+    // 3. Erase the function call merging to (if from's parent is provided)
     // Returns the modified version of to's assignment expression
     this.argsCouldntCopy = function(to, from){
         return "Error: Second calls arguments could not be copied into the first: \n"  + to + '\n' + from;
     }
-    this.mergeCalls = function(to, toParent, toAssignment, toAssignmentParent, from, fromParent, fromAssignment, twoReturns){
-        if (u.enu(to) || u.enu(toParent) || u.enu(from))
+    this.mergeCalls = function(o){
+        if (u.enu(o.to) || u.enu(o.toParent) || u.enu(o.from))
             return true;
 
-        twoReturns = twoReturns || false;
+        o.bothHaveReturns = o.bothHaveReturns || false;
         var removeFrom = true;
         
         // 1. Move any arguments, to prevent (╯°□°）╯︵ ┻━┻ only allow literals (e.g. 1 or 'a' or a, no function arguments etc.) to be copied.
-        if (u.hasOwnPropertyChain(to, 'arguments') && u.hasOwnPropertyChain(from, 'arguments')){
-            if (!_.find(from.arguments, function(item){ return item.type !== 'Literal' && item.type !== 'Identifier'})){
-                _.each(from.arguments.reverse(), function(item){
-                    to.arguments.unshift(item);
+        if (u.hasOwnPropertyChain(o.to, 'arguments') && u.hasOwnPropertyChain(o.from, 'arguments')){
+            if (!_.find(o.from.arguments, function(item){ return item.type !== 'Literal' && item.type !== 'Identifier'})){
+                _.each(o.from.arguments.reverse(), function(item){
+                    o.to.arguments.unshift(item);
                 });
-                from.arguments.reverse();
+                o.from.arguments.reverse();
             }
         } 
         else
-            throw(_this.argsCouldntCopy(to, from));
+            throw(_this.argsCouldntCopy(o.to, o.from));
         
         // 2. Change to's structure if from is part of an assignment
-        if (!u.enu(fromAssignment))
-            toAssignment = this.copyFromAssignment(toAssignment, toAssignmentParent, fromAssignment, to, toParent, twoReturns);
+        if (!u.enu(o.fromAssignment)){
+            o.toAssignment = this.copyFromAssignment({
+                to: o.to,
+                toParent: o.toParent,
+                toAssignment: o.toAssignment,
+                toAssignmentParent: o.toAssignmentParent,
+                fromAssignment: o.fromAssignment,
+                bothHaveReturns: o.bothHaveReturns
+            });
+        }
         
         // 3. Remove from function call
-        this.removeFromParent(from, fromParent);
+        this.removeFromParent(o.from, o.fromParent);
         
-        return toAssignment;
+        return o.toAssignment;
     }
 
-    // Updates to's assignment structure and data when from is an assignment. Returns the modified toAssignment.
-    this.copyFromAssignment = function(toAssignment, toAssignmentParent, fromAssignment, to, toParent, twoReturns){
+    // Accepts an object:
+    // {
+    //      -- These must be defined and not empty if from has an assignment and either bothHaveReturns is false or to doesn't have an assignment   
+    //      to: <object>,
+    //      toParent: <object>,
+    //      fromAssignment:<object>,
+    //      -- Also, these must not be empty if from is to be properly removed from it's parent
+    //      toAssignment: <>,
+    //      toAssignmentParent: <object>,
+    //      bothHaveReturns: true/false
+    // }
+    // Updates to's assignment structure and data when from is an assignment. Returns the modified the toAssignment.
+    this.copyFromAssignment = function(o){
         // If both to and from are part of an assignment and both have returns, the returns must be combined
-        if (!enu(toAssignment) && twoReturns){
-            var loopingItem = toAssignmentParent;
+        if (!enu(o.toAssignment) && o.bothHaveReturns){
+            var loopingItem = o.toAssignmentParent;
             if(u.hasOwnPropertyChain(loopingItem, 'body'))
                 loopingItem = loopingItem.body;
             
             // Loop through expression parent until expression is located, the index is where to insert to after.    
             _.find(loopingItem, function(item, index){
-                if (u.sameLine(item, toAssignment)){
-                    _this.splitCallAssignment(index, toAssignment, fromAssignment, loopingItem);
+                if (u.sameLine(item, o.toAssignment)){
+                    _this.splitCallAssignment(index, o.toAssignment, o.fromAssignment, loopingItem);
                     return true;
                 }
             });
         }
         // If from has an assignment must give to the contents of that assignment with to being initialized instead of from
-        else if (!enu(fromAssignment) && !enu(to) && !enu(toParent)){
+        else if (!enu(o.fromAssignment) && !enu(o.to) && !enu(o.toParent)){
             // Add to's call expression to from's assignment expression
-            if (fromAssignment.type === 'AssignmentExpression')
-                fromAssignment.right = to;
+            if (o.fromAssignment.type === 'AssignmentExpression')
+                o.fromAssignment.right = o.to;
             else
-                fromAssignment.declarations[0].init = to;
+                o.fromAssignment.declarations[0].init = o.to;
             
             // If from is an assignment expression give to it as to's expression
-            if (fromAssignment.type === 'AssignmentExpression'){
-                var loopingItem = toParent;
+            if (o.fromAssignment.type === 'AssignmentExpression'){
+                var loopingItem = o.toParent;
                 if(u.hasOwnPropertyChain(loopingItem, 'body'))
                     loopingItem = loopingItem.body;
 
                 _.find(loopingItem, function(obj){
-                    return u.sameLine(obj, to);
-                }).expression = fromAssignment;
+                    return u.sameLine(obj, o.to);
+                }).expression = o.fromAssignment;
             }
 
             // to now is the modified version of from's assignment expression
-            toAssignment = fromAssignment;
-            toAssignment.loc.start.line += 1;
+            o.toAssignment = o.fromAssignment;
+            o.toAssignment.loc.start.line += 1;
         }
 
-        return toAssignment;
+        return o.toAssignment;
     }
     
     // Function will be modified to return the two variables as an array, so must extract each individually which is what this does. Uses the to and
@@ -210,9 +251,9 @@ module.exports = function mergeFunction(){
         return "Error: Second function body could not be copied into the first: \n"  + to + '\n' + from;
     }
     this.mergeFunctions = function(to, from, fromParent){
-        var twoReturns = false;
+        var bothHaveReturns = false;
         if (u.enu(to) || u.enu(from))
-            return twoReturns;
+            return bothHaveReturns;
         
         // 1. Concatenate function parameters
         if (u.hasOwnPropertyChain(to, 'params') && u.hasOwnPropertyChain(from, 'params')){
@@ -240,7 +281,7 @@ module.exports = function mergeFunction(){
                 // Combine return statements if necessary
                 var last = _.last(from.body.body);
                 if (u.hasOwnPropertyChain(last, 'type') && last.type === 'ReturnStatement')
-                    twoReturns = this.returnHandler.moveReturns(to.body,  from.body);
+                    bothHaveReturns = this.returnHandler.moveReturns(to.body,  from.body);
                 else
                     to.body.body.unshift(toInsert);
             }
@@ -251,7 +292,7 @@ module.exports = function mergeFunction(){
         // 3. Delete second function declaration
         this.removeFromParent(from, fromParent);
         
-        return twoReturns;
+        return bothHaveReturns;
     }
     
     // Removes item from its parent or make the item equivalent to removed when it can't be removed. For example when the item to remove the first

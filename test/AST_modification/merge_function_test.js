@@ -600,10 +600,26 @@ module.exports = function(callback){
         });
 
         describe('#copyFromAssignment', function(){
+            beforeEach(function(){
+                test.notFromToAssignment = {
+                    to: test.callExpression2,
+                    toParent: test.blockBodyParent,
+                    toAssignmentParent: test.assignmentParent,
+                    bothHaveReturns: true
+                }
+
+                test.all = _.cloneDeep(test.notFromToAssignment);
+                test.all.toAssignment = test.assignmentExpression;
+                test.all.fromAssignment = _.cloneDeep(test.assignmentExpression);
+            });
+
             it('should do nothing when toAssignment is enu and fromAssignment is enu', function(){
                 (function copy(to, from){
                     var original = _.cloneDeep(to);
-                    to = mergeFunction.copyFromAssignment(to, test.assignmentParent, from, test.callExpression2, test.blockBodyParent, true);
+                    test.notFromToAssignment.toAssignment = to;
+                    test.notFromToAssignment.fromAssignment = from;
+                    to = mergeFunction.copyFromAssignment(test.notFromToAssignment);
+
                     assert.deepEqual(original, to);
 
                     return copy;
@@ -612,11 +628,15 @@ module.exports = function(callback){
                 ({})({}, null)({}, {});
             });
 
-            it('should do nothing when twoReturns is false and fromAssignment is enu', function(){
+            it('should do nothing when bothHaveReturns is false and fromAssignment is enu', function(){
+                test.notFromToAssignment.toAssignment = test.assignmentExpression;
+                test.notFromToAssignment.bothHaveReturns = false;
+
                 (function copy(from){
                     var original = _.cloneDeep(test.assignmentExpression);
-                    var to = mergeFunction.copyFromAssignment(test.assignmentExpression, test.assignmentParent, 
-                                from, test.callExpression2, test.blockBodyParent, false);
+                    test.notFromToAssignment.fromAssignment = from;
+                    var to = mergeFunction.copyFromAssignment(test.notFromToAssignment);
+
                     assert.deepEqual(original, to);
 
                     return copy;
@@ -626,38 +646,35 @@ module.exports = function(callback){
             // only going to test when both to and from assignments have arguments as splitting has been tested a lot more in detail in the
             // splitCallAssignment tests
             it('should split the to assignment combining return values when from and to assignment have return arguments', function(){
-                var fromAssignment = _.cloneDeep(test.assignmentExpression),
-                    toAssignmentOrig = _.cloneDeep(test.assignmentExpression);
+                var toAssignmentOrig = _.cloneDeep(test.all.toAssignment);
 
-                fromAssignment.left.name = 'b';
-                var fromAssignmentOrig = _.cloneDeep(fromAssignment);
+                test.all.fromAssignment.left.name = 'b';
+                var fromAssignmentOrig = _.cloneDeep(test.all.fromAssignment);
 
-                var to = mergeFunction.copyFromAssignment(test.assignmentExpression, test.assignmentParent, 
-                            fromAssignment, test.callExpression2, test.blockBodyParent, true);
+                var to = mergeFunction.copyFromAssignment(test.all);
 
                 // return should be split into a split_var = call; from
                 assert.equal(to.left.name, mergeFunction.SPLIT_VAR);
 
                 // from was mapped correctly
-                var expression = test.assignmentParent[1].body[0].expression;
+                var expression = test.all.toAssignmentParent[1].body[0].expression;
                 assert.equal(expression.right.object.name, mergeFunction.SPLIT_VAR);
                 assert.equal(expression.right.property.value, 0);
                 assert.equal(expression.left.name, fromAssignmentOrig.left.name);
 
                 // to was mapped correctly
-                var expression = test.assignmentParent[2].body[0].expression;
-
+                var expression = test.all.toAssignmentParent[2].body[0].expression;
                 assert.equal(expression.right.object.name, mergeFunction.SPLIT_VAR);
                 assert.equal(expression.right.property.value, 1);
                 assert.equal(expression.left.name, toAssignmentOrig.left.name);
             });
 
-            it('should do nothing if the same as last but to\'s assignment parent is enu', function(){
+            it('should do nothing if equivalent to last but to\'s assignment parent is enu', function(){
                 var original = _.cloneDeep(test.assignmentExpression);
 
                 (function copy(parent){
-                    var to = mergeFunction.copyFromAssignment(test.assignmentExpression, parent, _.cloneDeep(test.assignmentExpression),
-                                test.callExpression2, test.blockBodyParent, true);
+                    test.all.toAssignmentParent = parent;
+                    var to = mergeFunction.copyFromAssignment(test.all);
                     assert.deepEqual(test.assignmentExpression, original);
 
                     return copy
@@ -665,12 +682,15 @@ module.exports = function(callback){
             });
 
             it('should do nothing if fromAssignment is not enu and to or toParent are enu', function(){
-                var original = _.cloneDeep(test.assignmentExpression);
+                var original = _.cloneDeep(test.all.toAssignment);
+                test.all.bothHaveReturns = false;
 
                 (function copy(to, toParent){
-                    var to = mergeFunction.copyFromAssignment(test.assignmentExpression,  test.assignmentParent, 
-                                _.cloneDeep(test.assignmentExpression), to, toParent, false);
-                    assert.deepEqual(test.assignmentExpression, original);
+                    test.all.to = to;
+                    test.all.toParent = toParent;
+                    var to = mergeFunction.copyFromAssignment(test.all);
+
+                    assert.deepEqual(to, original);
 
                     return copy
                 })()(test.undefined, null)(test.undefined, {})
@@ -680,29 +700,29 @@ module.exports = function(callback){
 
             it('should make toAssignment be fromAssignment with .right as to and its start number incremented if from is an AssignmentExpression', 
             function(){
-                var fromAssignmentOrig = _.cloneDeep(test.assignmentExpression);
+                var fromAssignmentOrig = _.cloneDeep(test.all.fromAssignment);
 
-                var to = mergeFunction.copyFromAssignment(test.assignmentExpression,  test.assignmentParent, 
-                            _.cloneDeep(test.assignmentExpression), test.callExpression2, test.blockBodyParent, false);
+                test.all.bothHaveReturns = false;
+                var to = mergeFunction.copyFromAssignment(test.all);
 
                 assert.equal(to.loc.start.line, fromAssignmentOrig.loc.start.line + 1);
 
-                // There is a circular argument for the below variables, so go to that point instead of the parent to avoid infinite evaluation
-
-                // The immediate parent of to must be the same as the previously set fromAssignment which is now toAssignment
-                assert.deepEqual(_.find(test.blockBodyParent.body, function(obj){
+                // The immediate parent of to must be the same as the previously set fromAssignment which is now toAssignment. There is a circular
+                // argument for the below variables, so go to that point instead of the parent to avoid infinite evaluation
+                assert.deepEqual(_.find(test.all.toParent.body, function(obj){
                     return u.sameLine(obj, test.callExpression2);
                 }).expression.right.expression.right, to.right.expression.right);
 
-                assert.deepEqual(to.right.expression.right, test.callExpression2.expression.right);
+                assert.deepEqual(to.right.expression.right, test.all.to);
             });
 
             it('should make toAssignment be fromAssignment with the initialization as to and its start number incremented if from is not an ' +
                'AssignmentExpression', function(){
-                var fromAssignmentOrig = _.cloneDeep(test.variableDeclaration1);
+                test.all.fromAssignment = test.variableDeclaration1;
+                var fromAssignmentOrig = _.cloneDeep(test.all.fromAssignment);
 
-                var to = mergeFunction.copyFromAssignment(test.assignmentExpression,  test.assignmentParent, 
-                            test.variableDeclaration1, test.callExpression2, test.blockBodyParent, false);
+                test.all.bothHaveReturns = false;
+                var to = mergeFunction.copyFromAssignment(test.all);
 
                 assert.equal(to.loc.start.line, fromAssignmentOrig.loc.start.line + 1);                
                 assert.deepEqual(to.declarations[0].init, test.callExpression2);
@@ -711,22 +731,46 @@ module.exports = function(callback){
 
         describe('#mergeCalls()', function(){
             function testArgs(to, from, shouldBe){
-                mergeFunction.mergeCalls(to, test.blockBodyParent, test.assignmentExpression, test.assignmentParent,
-                    from, test.blockBodyParent, null, true);
+                test.all.to = to;
+                test.all.from = from;
+                test.all.fromAssignment = null;
+
+                mergeFunction.mergeCalls(test.all);
                 assert.deepEqual(to.arguments, shouldBe);
             }
 
             beforeEach(function(){
-                test.notTo = _.partialRight(mergeFunction.mergeCalls, test.assignmentExpression, test.assignmentParent, 
-                    test.callExpression2, test.blockBodyParent);
-                test.beforeFrom = _.partial(mergeFunction.mergeCalls, test.callExpression2, test.blockBodyParent,
-                    test.assignmentExpression, test.assignmentParent);
+                test.notTo = {
+                    toAssignment: test.assignmentExpression,
+                    toAssignmentParent: test.assignmentParent,
+                    from: test.callExpression2,
+                    fromParent: test.blockBodyParent,
+                    fromAssignment: test.assignmentExpression,
+                    bothHaveReturns: false
+                }
+
+                test.notFrom = {
+                    to: test.callExpression2,
+                    toParent: test.blockBodyParent,
+                    toAssignment: test.assignmentExpression,
+                    toAssignmentParent: test.assignmentParent,
+                    fromParent: _.cloneDeep(test.blockBodyParent),
+                    fromAssignment: _.cloneDeep(test.assignmentExpression),
+                    bothHaveReturns: false
+                }
+
+                test.all = _.cloneDeep(test.notFrom);
+                test.all.from = _.cloneDeep(test.callExpression2);
+                test.all.bothHaveReturns = true;
             });
 
             // These will not cover every null case but represent a large enough sample to cover everything
             it('should do nothing if to or to\'s parent are enu', function(){
                 (function merge(to, toParent){
-                    test.notTo(to, toParent);
+                    test.notTo.to = to;
+                    test.notTo.toParent = toParent;
+                    mergeFunction.mergeCalls(test.notTo);
+
                     return merge;
                 })()(null)(null, {})(null, null)({})({}, null)({}, {});
             });
@@ -734,20 +778,23 @@ module.exports = function(callback){
             // fromParent checking tests are done later with the deletion from fromParent tests
             it('should do nothing if from is enu', function(){
                 (function merge(from){
-                    test.beforeFrom(from, test.blockBodyParent);
+                    test.notFrom.from = from;
+                    mergeFunction.mergeCalls(test.notFrom);
                     return merge;
                 })()(null)({});
             });
 
             it('should throw an error if either from or to have either no arguments object or an undefined one', function(){
-                (function mergeArgTest(object, testCall){
+                (function mergeArgTest(testObject){
                     expect(function(){
-                        testCall(object, test.assignmentParent);
-                    }).to.throw(mergeFunction.argsCouldntCopy(object, test.callExpression2));
+                        mergeFunction.mergeCalls(test.all);
+                    }).to.throw(mergeFunction.argsCouldntCopy(test.all.to, test.all.from));
 
                     return mergeArgTest;
-                })({red: 'test'}, test.notTo)({arguments: null}, test.notTo)// to tests
-                ({red: 'test'}, test.beforeFrom)({arguments: null}, test.beforeFrom)// from tests
+                })(test.all.to = {red: 'test'})
+                (test.all.to = {arguments: null})
+                (test.all.from = {red: 'test'})
+                (test.all.from = {arguments: null});
             });
 
             it('should append no arguments to to when both calls have no arguments', function(){
@@ -779,26 +826,26 @@ module.exports = function(callback){
 
             it('should return a modified toAssignment by using from assignment by combining arguments if fromAssignment is not enu', function(){
                 var originalParentLength = test.assignmentParent.length;
-                var to = mergeFunction.mergeCalls(test.callExpression2, test.blockBodyParent, test.assignmentExpression, test.assignmentParent, 
-                            _.cloneDeep(test.callExpression2), _.cloneDeep(test.blockBodyParent), _.cloneDeep(test.assignmentExpression), true);
+                var to = mergeFunction.mergeCalls(test.all);
 
                 // Check that SPLIT_VAR is assigned to via the main call
                 assert.equal(to.left.name, mergeFunction.SPLIT_VAR);
 
                 // check that to Assignment's parent has the split variables
-                assert.equal(test.assignmentParent.length, originalParentLength + 2);
-                assert.equal(test.assignmentParent[1].body[0].expression.right.object.name, mergeFunction.SPLIT_VAR);
-                assert.equal(test.assignmentParent[1].body[0].expression.right.property.value, 0);
-                assert.equal(test.assignmentParent[2].body[0].expression.right.object.name, mergeFunction.SPLIT_VAR);
-                assert.equal(test.assignmentParent[2].body[0].expression.right.property.value, 1);
+                assert.equal(test.all.toAssignmentParent.length, originalParentLength + 2);
+                assert.equal(test.all.toAssignmentParent[1].body[0].expression.right.object.name, mergeFunction.SPLIT_VAR);
+                assert.equal(test.all.toAssignmentParent[1].body[0].expression.right.property.value, 0);
+                assert.equal(test.all.toAssignmentParent[2].body[0].expression.right.object.name, mergeFunction.SPLIT_VAR);
+                assert.equal(test.all.toAssignmentParent[2].body[0].expression.right.property.value, 1);
             });
 
-            it('should remove from from its parent', function(){
+            it('should remove from from it\'s parent', function(){
                 var from = _.cloneDeep(test.callExpression2),
                     fromParent = _.cloneDeep(test.blockBodyParent);
 
-                mergeFunction.mergeCalls(test.callExpression2, test.blockBodyParent, test.assignmentExpression, test.assignmentParent, 
-                    from, fromParent, _.cloneDeep(test.assignmentExpression), true);
+                test.all.from = from;
+                test.all.fromParent = fromParent;
+                mergeFunction.mergeCalls(test.all);
 
                 assert.isUndefined(_.find(fromParent.body, function(item){
                     return _.isEqual(item, from);
