@@ -3,9 +3,9 @@ var fs = require('fs');
 
 var u = require('../utility_functions.js');
 
-// numFile indicates how early the current file write is
+// Records statistics by writing into an internal array (statistics) and can write JSON contents to a file.
 module.exports = function functionStatistics(){
-    var functionStatistics = [
+    var statistics = [
         //{
         //      name: <callTo-callFrom>
         //      numOfParamsTo: <num>,
@@ -13,17 +13,21 @@ module.exports = function functionStatistics(){
         //      etc.
         //},
     ]
+    this.statistics = statistics;
     
-    // Adds the sent in functions statistics to the function statistics list, returns the function that was statistized.
-    this.addFunctionStatistics = function(callTo, callFrom, functionTo, functionFrom){
-        functionStatistics.push({
+    // Adds the sent in functions statistics to the function statistics list, returns statistics object that was generated.
+    this.add = function(callTo, callFrom, functionTo, functionFrom){
+        if (u.enu(callTo) || u.enu(callFrom) || u.enu(functionTo) || u.enu(functionFrom))
+            return {};
+
+        statistics.push({
             name: callFrom.simpleName + '-' + callTo.simpleName,
             
             // naming
             toChar1: callTo.simpleName[0],
             fromChar1: callFrom.simpleName[0],
-            toCharLast: callTo.simpleName[callTo.simpleName.length - 1],
-            fromCharLast: callFrom.simpleName[callFrom.simpleName.length - 1],
+            toCharLast: _.last(callTo.simpleName),
+            fromCharLast: _.last(callFrom.simpleName),
             
             // arguments and parameters
             paramsTo: functionTo.data.params.length,
@@ -37,7 +41,7 @@ module.exports = function functionStatistics(){
         });
         
         //synchronous will prevent later modifications affecting current analysis
-        return _.last(functionStatistics);
+        return _.last(statistics);
     }
     
     // Prints the set of function statistics to a file in CSV form. Data is not cleared it is appended. The header names are the names of the hash
@@ -45,8 +49,8 @@ module.exports = function functionStatistics(){
     // Note: purely asynchronous just writes to the file as it pleases.
     this.printFunctionStatistics = function(toFile){
         var toWrite = '';
-        if (functionStatistics.length > 0)
-            toWrite = JSON.stringify(functionStatistics) + ",";
+        if (statistics.length > 0)
+            toWrite = JSON.stringify(statistics) + ",";
         
         // Append derived contents to the end of the specified file
         if (toFile){

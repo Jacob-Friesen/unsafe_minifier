@@ -13,6 +13,8 @@ var MergeFunction = require('../../AST_modification/merge_function.js'),
 
 module.exports = function(callback){
     describe('mergeFunction', function() {
+        
+        var mergeFunction;
         beforeEach(function(){
             test = test.resetTestData();
             mergeFunction = MergeFunction();

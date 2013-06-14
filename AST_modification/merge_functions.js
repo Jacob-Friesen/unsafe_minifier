@@ -318,7 +318,7 @@ module.exports = function mergeFunctions(files, AST){
         var merges = 0;
         
         // Reversed so data that needs to be copied can be inserted at the beggining instead of end
-        _.each(context.functionCalls.reverse(), function(contents, index){
+        context.functionCalls.reverse().forEach(function(contents, index){
             if (previous !== null){
                 var seperation = Math.abs(context.getLineNumber(contents) - context.getLineNumber(previous));
                 if (seperation <= MAX_SEPERATION && seperation >= MIN_SEPERATION
@@ -326,7 +326,7 @@ module.exports = function mergeFunctions(files, AST){
                     var previousFunction = context.functionDeclarations[previous.simpleName];
                     var contentsFunction = context.functionDeclarations[contents.simpleName];
                     
-                    var statistics = context.functionStatistics.addFunctionStatistics(previous, contents, previousFunction, contentsFunction);
+                    var statistics = context.functionStatistics.add(previous, contents, previousFunction, contentsFunction);
                     if (u.nullOrUndefined(network) || network.canMerge(statistics)){
                         if (printMerges)
                             console.log('  merging: ' + contents.simpleName + "-" + previous.simpleName);
