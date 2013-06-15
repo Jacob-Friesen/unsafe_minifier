@@ -346,7 +346,7 @@ module.exports = function mergeFunctions(files, AST){
         });
         if (printMerges) console.log('merged ' + merges + ' functions.\n');
         
-        context.functionStatistics.printFunctionStatistics(context.files.mergeData);
+        context.functionStatistics.print(context.files.mergeData);
         return callback();
     }
     

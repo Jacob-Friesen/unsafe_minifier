@@ -1,11 +1,10 @@
-var _ = require('lodash');
-var fs = require('fs');
-
-var u = require('../utility_functions.js');
+var _ = require('lodash'),
+    fs = require('fs'),
+    u = require('../utility_functions.js');
 
 // Records statistics by writing into an internal array (statistics) and can write JSON contents to a file.
 module.exports = function functionStatistics(){
-    var statistics = [
+    this.statistics = [
         //{
         //      name: <callTo-callFrom>
         //      numOfParamsTo: <num>,
@@ -13,14 +12,13 @@ module.exports = function functionStatistics(){
         //      etc.
         //},
     ]
-    this.statistics = statistics;
     
     // Adds the sent in functions statistics to the function statistics list, returns statistics object that was generated.
     this.add = function(callTo, callFrom, functionTo, functionFrom){
         if (u.enu(callTo) || u.enu(callFrom) || u.enu(functionTo) || u.enu(functionFrom))
             return {};
 
-        statistics.push({
+        this.statistics.push({
             name: callFrom.simpleName + '-' + callTo.simpleName,
             
             // naming
@@ -44,16 +42,15 @@ module.exports = function functionStatistics(){
         return _.last(statistics);
     }
     
-    // Prints the set of function statistics to a file in CSV form. Data is not cleared it is appended. The header names are the names of the hash
-    // params e.g. name.
-    // Note: purely asynchronous just writes to the file as it pleases.
-    this.printFunctionStatistics = function(toFile){
+    // Prints the set of function statistics to a file in CSV form. Data is not cleared, it is appended.
+    this.print = function(toFile){
         var toWrite = '';
-        if (statistics.length > 0)
-            toWrite = JSON.stringify(statistics) + ",";
+
+        if (this.statistics.length > 0)
+            toWrite = JSON.stringify(this.statistics) + ",";
         
         // Append derived contents to the end of the specified file
-        if (toFile){
+        if (_.isString(toFile) && toFile.length > 0){
             fs.appendFile(toFile, toWrite, function (err) {
                 if (err) throw err;
             });

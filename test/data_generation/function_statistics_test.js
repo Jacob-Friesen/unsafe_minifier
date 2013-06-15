@@ -1,6 +1,10 @@
 var _ = require('lodash'),
     chai = require('chai'),
-    assert = chai.assert;
+    assert = chai.assert,
+    sinon = require('sinon'),
+    spy = sinon.spy,
+    stub = sinon.stub,
+    fs = require('fs');
 
 var FunctionStatistics = require('../../data_generation/function_statistics.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
@@ -92,6 +96,58 @@ module.exports = function(callback){
                     assert.equal(stats.startTo, test.callWrapper.data.loc.start.line);
                     assert.equal(stats.startFrom, test.callWrapper1.data.loc.start.line);
                 });
+            });
+        });
+
+        describe('#print()', function(){
+            function testStatisticPrint(statistics){
+                functionStatistics.statistics = statistics;
+
+                var contents = ''; 
+                if (!_.isEmpty(functionStatistics.statistics))
+                    contents = JSON.stringify(functionStatistics.statistics) + ',';
+
+                var file = 'a/file.json',
+                    stubbed = stub(fs, 'appendFile'),
+                    stubWithValue = stubbed.withArgs(file, contents);// Callback is irrelevant
+
+                functionStatistics.print('a/file.json');
+
+                assert.isTrue(stubWithValue.calledOnce);
+            }
+
+            afterEach(function(){
+                if (fs.appendFile.restore)
+                    fs.appendFile.restore();
+            })
+
+            it('should not open a file if file name given was not a string or empty', function(){
+                var append = spy(fs, 'appendFile');
+
+                (function testIt(file){
+                    functionStatistics.print(file);
+                    assert.isFalse(append.called);
+
+                    return testIt;
+                })()(null)('');
+            });
+
+            it('should add nothing to an empty file if the statistics array is empty', function(){
+                testStatisticPrint([]);
+            });
+
+            it('should add the contents of the statistics array to the given file with a comma at the end', function(){
+                // The contents of the statistics array are irrelevant to this printing so I can just out in some dummy values
+                testStatisticPrint([
+                    {
+                        property1: 'red',
+                        property2: 'blue'
+                    },
+                    {
+                        property1: 'green',
+                        property2: 'purple'
+                    }
+                ]);
             });
         });
     });
