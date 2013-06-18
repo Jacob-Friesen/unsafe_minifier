@@ -6,6 +6,11 @@ var u = require('../utility_functions');
 module.exports = function(callback){ 
 
     describe('utility_functions', function() {
+        var test = {};
+        beforeEach(function(){
+            test = {};
+        });
+
         after(function(){
             callback();
         });
@@ -81,39 +86,36 @@ module.exports = function(callback){
 
         describe('#nullOrUndefined()', function(){
             it('should return true when a variable is not defined', function(){
-                var test = {};
                 assert.isTrue(u.nullOrUndefined(test.test));
             });
 
             it('should return true when a variable is null', function(){
-                var test; 
+                test = null; 
                 assert.isTrue(u.nullOrUndefined(test));
             });
 
             it('should return false when a variable is assigned', function(){
-                var test = false;
+                test = false;
                 assert.isFalse(u.nullOrUndefined(test));
             })
         });
 
         describe('#enu()', function(){
             it('should return true when a variable is not defined', function(){
-                var test = {};
                 assert.isTrue(u.enu(test.test));
             });
 
             it('should return true when a variable is null', function(){
-                var test; 
+                test = null; 
                 assert.isTrue(u.enu(test));
             });
 
             it('should return true when a variable is empty', function(){
-                var test = {}; 
                 assert.isTrue(u.enu(test));
             });
 
             it('should return false when the variable is not empty', function(){
-                var test = ['here'];
+                test = ['here'];
                 assert.isFalse(u.enu(test));
                 test = {property: ''};
                 assert.isFalse(u.enu(test));
@@ -121,11 +123,6 @@ module.exports = function(callback){
         });
 
         describe('#hasOwnPropertyChain()', function(){
-            var test = {};
-            beforeEach(function(){
-                test = {};
-            });
-
             it('should return true when nothing is provided', function(){
                 assert.isTrue(u.hasOwnPropertyChain());
             });
@@ -165,6 +162,32 @@ module.exports = function(callback){
                 test.test.test = {};
                 test.test.test.test = 'end';
                 assert.isTrue(u.hasOwnPropertyChain(test, 'test' ,'test', 'test'));
+            });
+        });
+
+        describe('#getLineNumber()', function(){
+            it('should return -1 if the item sent in is enu', function(){
+                [test.undefined, null, {}].forEach(function(item){
+                    assert.equal(u.getLineNumber(item), -1);
+                });
+            });
+
+            it('should return -1 when .loc.start.line is empty', function(){
+                (function get(){
+                    assert.equal(u.getLineNumber(test), -1);
+                    return get;
+                })(test.loc = {})
+                (test.loc.start = {});
+            });
+
+            it('should return the line number .loc.start.line is defined', function(){
+                test.loc = {
+                    start: {
+                        line: 110
+                    }
+                }
+
+                assert.equal(u.getLineNumber(test), 110);
             });
         });
 
@@ -241,7 +264,6 @@ module.exports = function(callback){
             });
 
             it('should return null when given an undefined or null', function(){
-                var test = {};
                 assert.isNull(u.getJSONFile(test.test));
                 test.test = null;
                 assert.isNull(u.getJSONFile(test.test));

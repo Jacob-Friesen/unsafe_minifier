@@ -1,6 +1,5 @@
 var _ = require('lodash'),
-    esprima = require("esprima"),
-    escodegen = require("escodegen");
+    esprima = require("esprima");
 
 var u = require('../utility_functions.js'),
     ReturnHandler = require('./return_handler.js'),

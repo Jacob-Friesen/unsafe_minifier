@@ -159,7 +159,7 @@ module.exports = function mergeFunctions(files, AST){
                     // Check for a duplicate entry before adding (See checkForCalls)
                     var duplicate = false;
                     for (var i = 0; i < context.functionCalls.length && !duplicate; i++){
-                        if (context.getLineNumber(context.functionCalls[i].data) === context.getLineNumber(foundItem)
+                        if (u.getLineNumber(context.functionCalls[i].data.data) === u.getLineNumber(foundItem.data)
                             && context.functionCalls[i].fullName === name)
                             duplicate = true;
                     }
@@ -284,7 +284,7 @@ module.exports = function mergeFunctions(files, AST){
     // Decide on the functions to merge using a nueral network if applicable and writes the statistics of the merged function pairs
     this.mergeFunctions = function(callback, network, printMerges){
         this.functionCalls = context.trimFunctionCalls();
-        return context.mergeSimilarFunctions(callback, network, printMerges);
+        return context.combineFunctions(network, printMerges, callback);
     }
     
     // Eliminate function calls that have no found definitions and clean them up by storing the call name and
@@ -302,10 +302,10 @@ module.exports = function mergeFunctions(files, AST){
         return newFunctionCalls;
     }
     
-    // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers
-    // statistics then sends them to its checking function
-    this.mergeSimilarFunctions = function(callback, network, printMerges){
-        var MIN_SEPERATION = 1;// Cannot merge function calls on the same line (TODO: maybe the nueral net can detect this??)
+    // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers statistics then sends
+    // them to its checking function
+    this.combineFunctions = function(network, printMerges, callback){
+        var MIN_SEPERATION = 1;// Cannot merge function calls on the same line
         var MAX_SEPERATION = 5;// Only merge function calls that are this many lines apart
         
         // Redorder function calls by start location, any calls within short range of each other are candidates
@@ -320,7 +320,7 @@ module.exports = function mergeFunctions(files, AST){
         // Reversed so data that needs to be copied can be inserted at the beggining instead of end
         context.functionCalls.reverse().forEach(function(contents, index){
             if (previous !== null){
-                var seperation = Math.abs(context.getLineNumber(contents) - context.getLineNumber(previous));
+                var seperation = Math.abs(u.getLineNumber(contents.data) - u.getLineNumber(previous.data));
                 if (seperation <= MAX_SEPERATION && seperation >= MIN_SEPERATION
                     && previous.simpleName !== contents.simpleName){//<- no point to merge same name functions, would result in code doubling
                     var previousFunction = context.functionDeclarations[previous.simpleName];
@@ -347,13 +347,8 @@ module.exports = function mergeFunctions(files, AST){
         if (printMerges) console.log('merged ' + merges + ' functions.\n');
         
         context.functionStatistics.print(context.files.mergeData);
+
         return callback();
-    }
-    
-    this.getLineNumber = function(item){
-        if (u.hasOwnPropertyChain(item, 'data', 'loc', 'start', 'line'))
-            return item.data.loc.start.line;
-        return -1;
     }
     
     return this;

@@ -56,10 +56,16 @@ module.exports = (function(){
         }(item, args);
     }
 
+    this.getLineNumber = function(item){
+        if (_this.hasOwnPropertyChain(item, 'loc', 'start', 'line'))
+            return item.loc.start.line;
+        return -1;
+    }
+
     // Checks if both the starting lines of the 2 objects are the same (via loc.start.line)
     this.sameLine = function(object1, object2){
-        return _this.hasOwnPropertyChain(object1, 'loc', 'start', 'line') && _this.hasOwnPropertyChain(object2, 'loc', 'start', 'line') &&
-               object1.loc.start.line === object2.loc.start.line;
+        var line1 = _this.getLineNumber(object1);
+        return line1 != -1 && line1 === _this.getLineNumber(object2);
     }
     
     // Since JSON files are inserted into multiple times they must be reread by treating the file as an array of arrays object. Each array had a
