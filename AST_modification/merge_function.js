@@ -16,9 +16,9 @@ module.exports = function mergeFunction(){
     this.SPLIT_VAR = '_r';
     
     // Merges the second call into the first and the second function into the first
-    this.merge = function(callTo, callFrom, functionTo, functionFrom, callback){
+    this.merge = function(callTo, callFrom, functionTo, functionFrom){
         if (enu(functionTo) || enu(functionFrom) || enu(callTo) || enu(callFrom))
-            return callback();
+            return true
 
         mergeName = callTo.simpleName + '-' + callFrom.simpleName;
         
@@ -37,7 +37,7 @@ module.exports = function mergeFunction(){
         
         merges.push(mergeName);
         
-        return callback();
+        return true;
     }
     
     // Accepts an object:

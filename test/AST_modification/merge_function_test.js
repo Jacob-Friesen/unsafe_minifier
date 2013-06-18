@@ -898,24 +898,14 @@ module.exports = function(callback){
                     mergeFunction.merges.push.restore();
             })
 
-            it('should do nothing to either function wrapper when one is enu and callback', function(){
-                testCallbackOnly(true);
-            });
-
-            it('should do nothing to either call wrapper when one is enu and callback', function(){
-                testCallbackOnly(false);
-            });
-
             it('should send in the appropriate parameters for mergeFunctions', function(){
                 var functionWrapper1 = _.cloneDeep(test.functionWrapper);
 
                 test.functionWrapper.data.id = 1;// just to make it not an exact copy of the above
                 var functionWrapper2 = _.cloneDeep(test.functionWrapper);
 
-                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper);
                 test.calls[0].calledWith(functionWrapper1.data, functionWrapper2.data, functionWrapper2.parent);
-
-                assert.isTrue(test.called);
             });
 
             it('should send in the appropriate parameters for mergeCalls', function(){
@@ -935,10 +925,8 @@ module.exports = function(callback){
                     bothHaveReturns: false
                 }
 
-                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                mergeFunction.merge(test.callWrapper, test.callWrapper, test.functionWrapper, test.functionWrapper);
                 test.calls[1].calledWith(toSend);
-
-                assert.isTrue(test.called);
             });
 
             it('should add the correct name pair from the call wrapper into the merges list', function(){
@@ -948,12 +936,12 @@ module.exports = function(callback){
                 test.callWrapper2 = _.cloneDeep(test.callWrapper);
                 test.callWrapper2.simpleName = 'test2';
 
-                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper);
                 assert.deepEqual(mergeFunction.merges, ['test1-test2'])
 
                 test.callWrapper.simpleName = 'test3';
                 test.callWrapper2.simpleName = 'test4';
-                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper, test.mergeCallback);
+                mergeFunction.merge(test.callWrapper, test.callWrapper2, test.functionWrapper, test.functionWrapper);
                 assert.deepEqual(mergeFunction.merges, ['test1-test2', 'test3-test4']);
             });
         });

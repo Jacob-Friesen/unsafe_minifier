@@ -1,8 +1,9 @@
 var _ = require('lodash');
 
-var u = require('../utility_functions.js');
-var MergeFunction = require('./merge_function.js');
-var FunctionStatistics = require('../data_generation/function_statistics.js');
+var u = require('../utility_functions.js'),
+    messages = require('../messages.js')(),
+    MergeFunction = require('./merge_function.js'),
+    FunctionStatistics = require('../data_generation/function_statistics.js');
 
 // Handles function merging for the given AST. Finds most of the calls and functions in the code, keep in mined
 // JS is extremely expressive and this system is a prototype. Function declerations and calls that will not be
@@ -246,10 +247,7 @@ module.exports = function mergeFunctions(files, AST){
         return name;
     }
     
-    // find simple name, normally last part in split but not if there is a call or apply modifier
-    // see these links for how call and apply work:
-    // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/call
-    // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/apply
+    // Find simple name, normally last part in split but not if there is a call or apply modifier.
     this.extractSimpleName = function(name){
         if (u.nullOrUndefined(name))
             return name;
@@ -311,18 +309,20 @@ module.exports = function mergeFunctions(files, AST){
         // Redorder function calls by start location, any calls within short range of each other are candidates
         // for merging.
         context.functionCalls.sort(function(callX, callY) {
-            return callX.data.loc.start.line - callY.data.loc.start.line;
+            return u.getLineNumber(callY.data) - u.getLineNumber(callX.data);
         });
         
         var previous = null;
         var merges = 0;
         
         // Reversed so data that needs to be copied can be inserted at the beggining instead of end
-        context.functionCalls.reverse().forEach(function(contents, index){
+        context.functionCalls.forEach(function(contents, index){
             if (previous !== null){
+
                 var seperation = Math.abs(u.getLineNumber(contents.data) - u.getLineNumber(previous.data));
                 if (seperation <= MAX_SEPERATION && seperation >= MIN_SEPERATION
                     && previous.simpleName !== contents.simpleName){//<- no point to merge same name functions, would result in code doubling
+
                     var previousFunction = context.functionDeclarations[previous.simpleName];
                     var contentsFunction = context.functionDeclarations[contents.simpleName];
                     
@@ -332,11 +332,8 @@ module.exports = function mergeFunctions(files, AST){
                             console.log('  merging: ' + contents.simpleName + "-" + previous.simpleName);
                         merges += 1;
                         
-                        context.mergeFunction.merge(previous, contents, previousFunction, contentsFunction, function(){
-                            return true;
-                        });
+                        context.mergeFunction.merge(previous, contents, previousFunction, contentsFunction);
                     }
-                    
                     
                     // Deleted function shouldn't serve as a basis for adding to functions
                     contents = previous;
@@ -344,11 +341,11 @@ module.exports = function mergeFunctions(files, AST){
             }
             previous = contents;
         });
-        if (printMerges) console.log('merged ' + merges + ' functions.\n');
+        if (printMerges) messages.merging.total(merges).send();
         
         context.functionStatistics.print(context.files.mergeData);
 
-        return callback();
+        return (_.isFunction(callback)) ? callback() : true;
     }
     
     return this;
