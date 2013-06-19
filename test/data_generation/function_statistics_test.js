@@ -28,7 +28,7 @@ module.exports = function(callback){
         var functionStatistics;
         beforeEach(function(){
             test = test.resetTestData();
-            functionStatistics = FunctionStatistics();
+            functionStatistics = new FunctionStatistics();
         });
 
         after(function(){

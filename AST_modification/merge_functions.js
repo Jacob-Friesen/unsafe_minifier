@@ -1,7 +1,7 @@
 var _ = require('lodash');
 
 var u = require('../utility_functions.js'),
-    messages = require('../messages.js')(),
+    messages = new require('../messages.js')(),
     MergeFunction = require('./merge_function.js'),
     FunctionStatistics = require('../data_generation/function_statistics.js');
 
@@ -13,9 +13,13 @@ module.exports = function mergeFunctions(files, AST){
         throw('Error: files must be specified in main.js.');
         
     var context = this;
-    this.mergeFunction = MergeFunction();
-    this.functionStatistics = FunctionStatistics();
+    this.mergeFunction = new MergeFunction();
+    this.functionStatistics = new FunctionStatistics();
     this.files = files;
+
+    // How far apart in terms of lines similar functions can be
+    this.MIN_SEPERATION = 1;// No same line merges
+    this.MAX_SEPERATION = 5;
     
     // format:
     // {
@@ -301,38 +305,30 @@ module.exports = function mergeFunctions(files, AST){
     }
     
     // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers statistics then sends
-    // them to its checking function
+    // them to its checking function. printMerges determines if the individual and total merges are printed.
     this.combineFunctions = function(network, printMerges, callback){
-        var MIN_SEPERATION = 1;// Cannot merge function calls on the same line
-        var MAX_SEPERATION = 5;// Only merge function calls that are this many lines apart
-        
-        // Redorder function calls by start location, any calls within short range of each other are candidates
-        // for merging.
+        // Redorder function calls by start location, descending. Any calls within short range of each other are candidates for merging.
         context.functionCalls.sort(function(callX, callY) {
             return u.getLineNumber(callY.data) - u.getLineNumber(callX.data);
         });
         
-        var previous = null;
-        var merges = 0;
-        
-        // Reversed so data that needs to be copied can be inserted at the beggining instead of end
+        var previous = null,
+            merges = 0;
         context.functionCalls.forEach(function(contents, index){
             if (previous !== null){
 
                 var seperation = Math.abs(u.getLineNumber(contents.data) - u.getLineNumber(previous.data));
-                if (seperation <= MAX_SEPERATION && seperation >= MIN_SEPERATION
-                    && previous.simpleName !== contents.simpleName){//<- no point to merge same name functions, would result in code doubling
-
-                    var previousFunction = context.functionDeclarations[previous.simpleName];
-                    var contentsFunction = context.functionDeclarations[contents.simpleName];
+                if (seperation <= context.MAX_SEPERATION && seperation >= context.MIN_SEPERATION && previous.simpleName !== contents.simpleName){
+                    var previousFunction = context.functionDeclarations[previous.simpleName],
+                        contentsFunction = context.functionDeclarations[contents.simpleName];
                     
                     var statistics = context.functionStatistics.add(previous, contents, previousFunction, contentsFunction);
                     if (u.nullOrUndefined(network) || network.canMerge(statistics)){
-                        if (printMerges)
-                            console.log('  merging: ' + contents.simpleName + "-" + previous.simpleName);
-                        merges += 1;
+                        if (printMerges) messages.merging.merge(contents.simpleName, previous.simpleName).send();
                         
                         context.mergeFunction.merge(previous, contents, previousFunction, contentsFunction);
+
+                        merges += 1;
                     }
                     
                     // Deleted function shouldn't serve as a basis for adding to functions

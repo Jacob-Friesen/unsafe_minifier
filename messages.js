@@ -17,6 +17,10 @@ function form(message){
 var messages = {
 
     merging: {
+        merge: function(toName, fromName){
+            return form('  merging: ' + toName + "->" + fromName);
+        },
+
         total: function(merges){
             return form('merged ' + merges + ' functions.\n');
         }

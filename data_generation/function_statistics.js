@@ -39,7 +39,7 @@ module.exports = function functionStatistics(){
         });
         
         //synchronous will prevent later modifications affecting current analysis
-        return _.last(statistics);
+        return _.last(this.statistics);
     }
     
     // Prints the set of function statistics to a file in CSV form. Data is not cleared, it is appended.

@@ -4,7 +4,7 @@ var _ = require('lodash'),
     expect = chai.expect;
 
 // ENU = empty/undefined/null
-var returnHandler = require('../../AST_modification/return_handler.js')(),
+var returnHandler = new require('../../AST_modification/return_handler.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     test = require('../test_data.js');
 

@@ -17,7 +17,7 @@ module.exports = function(callback){
         var mergeFunction;
         beforeEach(function(){
             test = test.resetTestData();
-            mergeFunction = MergeFunction();
+            mergeFunction = new MergeFunction();
         });
 
         after(function(){
