@@ -21,9 +21,30 @@ module.exports = function(callback){
         var mergeFunctions;
         beforeEach(function(){
             test = test.resetTestData();
+
+            test.functionCalls = [];
+            [
+                test.callWrapper,
+                _.cloneDeep(test.callWrapper),
+                _.cloneDeep(test.callWrapper)
+            ].forEach(function(item, index){
+                item.simpleName = 'test' + index;
+                test.functionCalls.push(item);
+            });
+
+            var declarationList = [
+                test.functionWrapper,
+                _.cloneDeep(test.functionWrapper),
+                _.cloneDeep(test.functionWrapper)
+            ]
+
+            test.functionDecs = {};
+            test.functionCalls.forEach(function(item, index){
+                test.functionDecs[item.simpleName] = declarationList[index];
+            });
         });
 
-        describe('mergeSimilarFunctions', function(){
+        describe('combineFunctions', function(){
             function stubAddMerge(){
                 test.add = stub(mergeFunctions.functionStatistics, 'add');
                 test.merge = stub(mergeFunctions.mergeFunction, 'merge');
@@ -51,28 +72,6 @@ module.exports = function(callback){
 
             beforeEach(function(){
                 mergeFunctions = new MergeFunctions({});
-
-                test.functionCalls = [];
-                [
-                    test.callWrapper,
-                    _.cloneDeep(test.callWrapper),
-                    _.cloneDeep(test.callWrapper)
-                ].forEach(function(item, index){
-                    item.simpleName = 'test' + index;
-                    test.functionCalls.push(item);
-                });
-
-                var declerationList = [
-                    test.functionWrapper,
-                    _.cloneDeep(test.functionWrapper),
-                    _.cloneDeep(test.functionWrapper)
-                ]
-
-                test.functionDecs = {}
-                test.functionCalls.forEach(function(item, index){
-                    test.functionDecs[item.simpleName] = declerationList[index];
-                });
-
                 test.print = stub(mergeFunctions.functionStatistics, 'print');
             });
 
@@ -232,6 +231,47 @@ module.exports = function(callback){
             });
 
             // Going to hold off on network tests until I am done testing the nueral network section.
+        });
+
+        describe('trimFunctionCalls', function(){
+            beforeEach(function(){
+                mergeFunctions = new MergeFunctions({});
+            });
+
+            it('should return an empty array when the function calls array is empty', function(){
+                assert.deepEqual(mergeFunctions.trimFunctionCalls(), []);
+            });
+
+            it('should return an empty array when there are no matching functions to the calls', function(){
+                test.functionCalls.forEach(function(item, index){
+                    test.functionDecs[item.simpleName + 't'] = item;
+                    delete test.functionDecs[item.simpleName];
+                });
+                mergeFunctions.functionCalls = test.functionCalls;
+                mergeFunctions.functionDeclarations = test.functionDecs;
+
+                assert.deepEqual(mergeFunctions.trimFunctionCalls(), []);
+            });
+
+            it('should return an array contianing calls that have a matching function declaration name', function(){
+                test.functionCalls.forEach(function(item, index){
+                    if (index < test.functionCalls.length - 1){
+                        test.functionDecs[item.simpleName + 't'] = item;
+                        delete test.functionDecs[item.simpleName];
+                    }
+                });
+                mergeFunctions.functionCalls = test.functionCalls;
+                mergeFunctions.functionDeclarations = test.functionDecs;
+
+                assert.deepEqual(mergeFunctions.trimFunctionCalls(), [test.functionCalls[2]]);
+            });
+
+            it('should return an array the same function Call array as before when each call has a matching declaration', function(){
+                mergeFunctions.functionCalls = test.functionCalls;
+                mergeFunctions.functionDeclarations = test.functionDecs;
+
+                assert.deepEqual(mergeFunctions.trimFunctionCalls(), test.functionCalls);
+            });
         });
     });
 }

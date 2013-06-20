@@ -289,8 +289,7 @@ module.exports = function mergeFunctions(files, AST){
         return context.combineFunctions(network, printMerges, callback);
     }
     
-    // Eliminate function calls that have no found definitions and clean them up by storing the call name and
-    // proper call name (e.g. red vs this.selector.red)) seperately
+    // Eliminate function calls that have no found definitions and clean them up by storing the call name
     this.trimFunctionCalls = function(){
         var newFunctionCalls = [];
         var functionDeclarationNames = _.map(this.functionDeclarations, function(funct, name){ return name; });
