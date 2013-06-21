@@ -44,7 +44,7 @@ module.exports = function(callback){
             });
         });
 
-        describe('combineFunctions', function(){
+        describe('#combineFunctions()', function(){
             function stubAddMerge(){
                 test.add = stub(mergeFunctions.functionStatistics, 'add');
                 test.merge = stub(mergeFunctions.mergeFunction, 'merge');
@@ -71,6 +71,8 @@ module.exports = function(callback){
             }
 
             beforeEach(function(){
+                messages.merging.print = false;
+
                 mergeFunctions = new MergeFunctions({});
                 test.print = stub(mergeFunctions.functionStatistics, 'print');
             });
@@ -86,14 +88,14 @@ module.exports = function(callback){
             // Will test the callback and print calling going through the loop too later
             it('should do nothing when functionCalls are not set except call the callback and print the function statistics', function(){
                 var callback = stub();
-                mergeFunctions.combineFunctions(null, false, callback);
+                mergeFunctions.combineFunctions(null, callback);
 
                 assert.isTrue(callback.calledOnce);
                 assert.isTrue(test.print.calledOnce);
             });
 
             it('should do the same as last but with an undefined callback', function(){
-                mergeFunctions.combineFunctions(null, false, {});
+                mergeFunctions.combineFunctions(null, {});
                 assert.isTrue(test.print.calledOnce);
             });
 
@@ -105,7 +107,7 @@ module.exports = function(callback){
                 test.functionCalls[2].data.loc.start.line = 2;
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
 
                 // Make sure I didn't screw up anything else that uses forEach
                 assert.isTrue(forEach.calledOnce);
@@ -119,16 +121,17 @@ module.exports = function(callback){
             it('should merge no functions and add no statistics if functionDeclarations are empty', function(){
                 stubAddMerge();
 
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
 
             it('should print just the total number of merges with the previous conditions if printMerges is true', function(){
                 stubAddMerge();
+                messages.merging.print = true;
 
                 var consoleSpy = spy(console, 'log');
-                mergeFunctions.combineFunctions(null, true, null);
+                mergeFunctions.combineFunctions(null, null);
                 assert.isTrue(consoleSpy.calledWith(messages.merging.total(0) + ''));
 
                 console.log.restore();
@@ -140,7 +143,7 @@ module.exports = function(callback){
                 setCallLines([150, 150 - mergeFunctions.MAX_SEPERATION - 1, 150 - mergeFunctions.MAX_SEPERATION - 1]);
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
@@ -155,7 +158,7 @@ module.exports = function(callback){
                 setCallLines([150, 150 - mergeFunctions.MAX_SEPERATION, 150 - mergeFunctions.MAX_SEPERATION - 1]);
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
@@ -171,8 +174,7 @@ module.exports = function(callback){
                 mergeFunctions.functionCalls = test.functionCalls;
                 mergeFunctions.functionDeclarations = test.functionDecs;
 
-                //console.log(mergeFunctions.mergeFunction)
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
 
                 //test that the calls were correct
                 assert.isTrue(test.add.calledOnce);
@@ -192,7 +194,7 @@ module.exports = function(callback){
             it('should merge 3 functions and add their statistics if they are in the correct seperation distance from each other', function(){
                 prepareFor3Merges();
 
-                mergeFunctions.combineFunctions(null, false, null);
+                mergeFunctions.combineFunctions(null, null);
 
                 //test that the calls were correct
                 assert.isTrue(test.add.calledTwice);
@@ -209,6 +211,7 @@ module.exports = function(callback){
             it('should print each of the merges and the total number of merges with the previous conditions if printMerges is true', function(){
                 stubAddMerge();
                 prepareFor3Merges(true);
+                messages.merging.print = true;
 
                 var consoleSpy = spy(console, 'log');
                 mergeFunctions.combineFunctions(null, true, null);
@@ -224,7 +227,7 @@ module.exports = function(callback){
                 prepareFor3Merges(true);
 
                 var callback = stub();
-                mergeFunctions.combineFunctions(null, false, callback);
+                mergeFunctions.combineFunctions(null, callback);
 
                 assert.isTrue(callback.calledOnce);
                 assert.isTrue(test.print.calledOnce);
@@ -233,7 +236,7 @@ module.exports = function(callback){
             // Going to hold off on network tests until I am done testing the nueral network section.
         });
 
-        describe('trimFunctionCalls', function(){
+        describe('#trimFunctionCalls()', function(){
             beforeEach(function(){
                 mergeFunctions = new MergeFunctions({});
             });

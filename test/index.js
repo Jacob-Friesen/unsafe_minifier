@@ -6,6 +6,7 @@ var _ = require('lodash');
 if (_.contains(process.argv, '---u')){
 	var units = [
 		'./utility_functions_test',
+		'./messages_test',
 	    './AST_modification/return_handler_test',
 	    './AST_modification/merge_function_test',
 	    './AST_modification/merge_functions_test',

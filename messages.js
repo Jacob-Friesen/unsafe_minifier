@@ -1,31 +1,41 @@
 var u = require('./utility_functions.js');
 
-// This contains all the messages printed using send used in this application. Some of them are dynamic, so they are functions.
-
-// Create a new object that toStrings is the message and has an send method. Has all the default methods of String.  
-function form(message){
-    var msg = new String(message);
-    
-    msg.send = function(){
-        console.log(message);
-    }
-
-    return msg;
-}
-
-
+// Contains all messages for the application, each message object has an option to disable itself
 var messages = {
 
-    merging: {
-        merge: function(toName, fromName){
-            return form('  merging: ' + toName + "->" + fromName);
-        },
+    // Create a new object with toString as the message and has an send method. Has all the default methods of String. Prints if the printing object
+    // has print set to true.
+    form: function from(message){
+        var msg = new String(message);
 
-        total: function(merges){
-            return form('merged ' + merges + ' functions.\n');
+        var print = this.print;
+        msg.send = function(){
+            if (print) console.log(message);
         }
+
+        return msg;
+    },
+
+    // Adds a form set to messages.form and print set to true
+    create: function(obj){
+        if (!u.nullOrUndefined(obj)){
+            obj.form = messages.form;
+            obj.print = true;
+        }
+
+        return obj;
     }
 }
+
+messages.merging = messages.create({
+    merge: function(toName, fromName){
+        return this.form('  merging: ' + toName + "->" + fromName);
+    },
+
+    total: function(merges){
+        return this.form('merged ' + merges + ' functions.\n');
+    }
+});
 
 module.exports = function(){
     return messages;

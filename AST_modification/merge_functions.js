@@ -45,8 +45,8 @@ module.exports = function mergeFunctions(files, AST){
     this.functionCalls = [];
         
     // Merges the functions calling the callback with the returned AST, if a nueral network is included the network is used to determine if a merge is
-    // appropriate. Prints the functions that were merged if printMerges is true.
-    this.merge = function(fileName, callback, network, printMerges){
+    // appropriate.
+    this.merge = function(fileName, callback, network){
         console.log('merging ' + fileName + '...');
         
         // Find function declerations in the AST and then use those to find any that calls them
@@ -57,7 +57,7 @@ module.exports = function mergeFunctions(files, AST){
                 
                 context.mergeFunctions(function(){
                     return callback(AST);
-                }, network, printMerges);
+                }, network);
             });
         });
     }
@@ -284,9 +284,9 @@ module.exports = function mergeFunctions(files, AST){
     }
     
     // Decide on the functions to merge using a nueral network if applicable and writes the statistics of the merged function pairs
-    this.mergeFunctions = function(callback, network, printMerges){
+    this.mergeFunctions = function(callback, network){
         this.functionCalls = context.trimFunctionCalls();
-        return context.combineFunctions(network, printMerges, callback);
+        return context.combineFunctions(network, callback);
     }
     
     // Eliminate function calls that have no found definitions and clean them up by storing the call name
@@ -304,8 +304,8 @@ module.exports = function mergeFunctions(files, AST){
     }
     
     // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers statistics then sends
-    // them to its checking function. printMerges determines if the individual and total merges are printed.
-    this.combineFunctions = function(network, printMerges, callback){
+    // them to its checking function.
+    this.combineFunctions = function(network, callback){
         // Redorder function calls by start location, descending. Any calls within short range of each other are candidates for merging.
         context.functionCalls.sort(function(callX, callY) {
             return u.getLineNumber(callY.data) - u.getLineNumber(callX.data);
@@ -323,7 +323,7 @@ module.exports = function mergeFunctions(files, AST){
                     
                     var statistics = context.functionStatistics.add(previous, contents, previousFunction, contentsFunction);
                     if (u.nullOrUndefined(network) || network.canMerge(statistics)){
-                        if (printMerges) messages.merging.merge(contents.simpleName, previous.simpleName).send();
+                        messages.merging.merge(contents.simpleName, previous.simpleName).send();
                         
                         context.mergeFunction.merge(previous, contents, previousFunction, contentsFunction);
 
@@ -336,7 +336,7 @@ module.exports = function mergeFunctions(files, AST){
             }
             previous = contents;
         });
-        if (printMerges) messages.merging.total(merges).send();
+        messages.merging.total(merges).send();
         
         context.functionStatistics.print(context.files.mergeData);
 
