@@ -1,7 +1,7 @@
 var chai = require('chai'),
     assert = chai.assert,
     sinon = require('sinon'),
-    spy = sinon.spy;
+    stub = sinon.stub;
 
 var u = require('../utility_functions.js'),
     Messages = new require('../messages.js');
@@ -33,24 +33,24 @@ module.exports = function(callback){
             });
 
             it('should have a send call that prints the object if the wrapping object says its OK to print', function(){
-                var consoleSpy = spy(console, 'log');
+                var consoleStub = stub(console, 'log');
 
                 messages.print = true;
                 messages.form('test').send();
 
-                assert.isTrue(consoleSpy.calledOnce);
-                assert.isTrue(consoleSpy.calledWith('test'));
+                assert.isTrue(consoleStub.calledOnce);
+                assert.isTrue(consoleStub.calledWith('test'));
 
                 console.log.restore();
             });
 
             it('should not print when the wrapping objects print property is false', function(){
-                var consoleSpy = spy(console, 'log');
+                var consoleStub = stub(console, 'log');
 
                 messages.print = false;
                 messages.form('test').send();
 
-                assert.isFalse(consoleSpy.called);
+                assert.isFalse(consoleStub.called);
 
                 console.log.restore();
             });

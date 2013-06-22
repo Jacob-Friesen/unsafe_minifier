@@ -5,7 +5,7 @@ var messages = {
 
     // Create a new object with toString as the message and has an send method. Has all the default methods of String. Prints if the printing object
     // has print set to true.
-    form: function from(message){
+    form: function(message){
         var msg = new String(message);
 
         var print = this.print;
@@ -28,6 +28,14 @@ var messages = {
 }
 
 messages.merging = messages.create({
+    noFile: function(){
+        return this.form('merging file with no name...')
+    },
+
+    file: function(fileName){
+        return this.form('merging ' + fileName + '...');
+    },
+
     merge: function(toName, fromName){
         return this.form('  merging: ' + toName + "->" + fromName);
     },

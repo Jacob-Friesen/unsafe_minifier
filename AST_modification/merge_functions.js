@@ -9,8 +9,8 @@ var u = require('../utility_functions.js'),
 // JS is extremely expressive and this system is a prototype. Function declerations and calls that will not be
 // discovered are in findFunctionDeclarations and findFunctionCalls respectively.
 module.exports = function mergeFunctions(files, AST){
-    if (u.nullOrUndefined(files))
-        throw('Error: files must be specified in main.js.');
+    if (u.nullOrUndefined(files) || u.nullOrUndefined(AST) || u.nullOrUndefined(AST.body))
+        throw('Error: files and AST.body must be specified for this object');
         
     var context = this;
     this.mergeFunction = new MergeFunction();
@@ -47,19 +47,23 @@ module.exports = function mergeFunctions(files, AST){
     // Merges the functions calling the callback with the returned AST, if a nueral network is included the network is used to determine if a merge is
     // appropriate.
     this.merge = function(fileName, callback, network){
-        console.log('merging ' + fileName + '...');
+        if (!u.nullOrUndefined(fileName))
+            messages.merging.file(fileName).send();
+        else
+            messages.merging.noFile().send();
         
-        // Find function declerations in the AST and then use those to find any that calls them
-        this.findFunctionDeclarations(AST.body, function(){
+        // Find function declerations in the AST..
+        this.findFunctionDeclarations(AST.body);
+
+        // ... and then use those to find any that calls them
+        var functionNames = _.map(this.functionDeclarations, function(funct, name){ return name; });
+        this.findFunctionCalls(AST.body, functionNames);
             
-            var functionNames = _.map(this.functionDeclarations, function(funct, name){ return name; });
-            context.findFunctionCalls(AST.body, functionNames, function(){
-                
-                context.mergeFunctions(function(){
-                    return callback(AST);
-                }, network);
-            });
-        });
+        // Find which functions can be combined
+        this.functionCalls = context.trimFunctionCalls();
+        this.combineFunctions(network);
+
+        if (_.isFunction(callback)) callback(AST);
     }
     
     // Finds function declerations (even if part of an expression)
@@ -67,8 +71,8 @@ module.exports = function mergeFunctions(files, AST){
     // 1. Cannot handle auto invoking function expression name retrievals => Portfolio.selector = (function(_document)
     // 2. Cannot handle function assignments: var a = function b()
     // 3. Assumes function names are unique, so no context checks
-    this.findFunctionDeclarations = function(AST_data, callback, possibleName, parent, nameInParent){
-        if (callback) parent = AST_data;
+    this.findFunctionDeclarations = function(AST_data, possibleName, parent, nameInParent){
+        parent = parent || AST_data;
         
         _.each(AST_data, function(item, index){
             if (item !== null) {
@@ -80,17 +84,16 @@ module.exports = function mergeFunctions(files, AST){
                     possibleName = null;
                 }
                 
-                context.toContinue(item, function(){
-                    context.findFunctionDeclarations(item, null, possibleName, AST_data, index);
-                });
+                if (context.toContinue(item))
+                    context.findFunctionDeclarations(item, possibleName, AST_data, index);
             }
         });
-        
-        if (callback) callback();
+
+        return true;
     }
     
-    // Decides if the current item is worth investigation, if so recurse
-    this.toContinue = function(item, callback){
+    // Decides if the current item is worth investigation
+    this.toContinue = function(item){
         if (u.nullOrUndefined(item))
             return false;
         
@@ -102,9 +105,10 @@ module.exports = function mergeFunctions(files, AST){
                 return item.hasOwnProperty(type);
             }
         )){
-            return callback();
+            return true;
         }
-        return true;
+
+        return false;
     }
     
     // Tries to find a function expression name using the current item.
@@ -145,7 +149,7 @@ module.exports = function mergeFunctions(files, AST){
     // 2. Passed in callbacks
     this.findFunctionCalls = function(AST_data, functionNames, callback, possibleName, parent, nameInParent){
         _.each(AST_data, function(item, index){
-            if (callback) parent = AST_data;
+            parent = parent || AST_data;
             
             if (item !== null) {
                 // When function is anonymous it will be bound to another variable
@@ -183,13 +187,12 @@ module.exports = function mergeFunctions(files, AST){
                     }
                 });
                 
-                context.toContinue(item, function(){
+                if (context.toContinue(item))
                     context.findFunctionCalls(item, functionNames, null, possibleName, AST_data, index);
-                });
             }
         });
             
-        if (callback) callback();
+        return true;
     }
     
     // Checks if the item is a call and returns that found, otherwise if an assignment expression
@@ -283,12 +286,6 @@ module.exports = function mergeFunctions(files, AST){
         return name;
     }
     
-    // Decide on the functions to merge using a nueral network if applicable and writes the statistics of the merged function pairs
-    this.mergeFunctions = function(callback, network){
-        this.functionCalls = context.trimFunctionCalls();
-        return context.combineFunctions(network, callback);
-    }
-    
     // Eliminate function calls that have no found definitions and clean them up by storing the call name
     this.trimFunctionCalls = function(){
         var newFunctionCalls = [];
@@ -305,7 +302,7 @@ module.exports = function mergeFunctions(files, AST){
     
     // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers statistics then sends
     // them to its checking function.
-    this.combineFunctions = function(network, callback){
+    this.combineFunctions = function(network){
         // Redorder function calls by start location, descending. Any calls within short range of each other are candidates for merging.
         context.functionCalls.sort(function(callX, callY) {
             return u.getLineNumber(callY.data) - u.getLineNumber(callX.data);
@@ -340,7 +337,7 @@ module.exports = function mergeFunctions(files, AST){
         
         context.functionStatistics.print(context.files.mergeData);
 
-        return (_.isFunction(callback)) ? callback() : true;
+        return true;
     }
     
     return this;

@@ -73,7 +73,7 @@ module.exports = function(callback){
             beforeEach(function(){
                 messages.merging.print = false;
 
-                mergeFunctions = new MergeFunctions({});
+                mergeFunctions = new MergeFunctions({}, {body: {}});
                 test.print = stub(mergeFunctions.functionStatistics, 'print');
             });
 
@@ -85,17 +85,13 @@ module.exports = function(callback){
                     mergeFunctions.mergeFunction.merge.restore();
             });
 
-            // Will test the callback and print calling going through the loop too later
-            it('should do nothing when functionCalls are not set except call the callback and print the function statistics', function(){
-                var callback = stub();
-                mergeFunctions.combineFunctions(null, callback);
-
-                assert.isTrue(callback.calledOnce);
+            it('should do nothing when functionCalls are not set except print the function statistics', function(){
+                mergeFunctions.combineFunctions(null);
                 assert.isTrue(test.print.calledOnce);
             });
 
             it('should do the same as last but with an undefined callback', function(){
-                mergeFunctions.combineFunctions(null, {});
+                mergeFunctions.combineFunctions(null);
                 assert.isTrue(test.print.calledOnce);
             });
 
@@ -107,7 +103,7 @@ module.exports = function(callback){
                 test.functionCalls[2].data.loc.start.line = 2;
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
 
                 // Make sure I didn't screw up anything else that uses forEach
                 assert.isTrue(forEach.calledOnce);
@@ -121,7 +117,7 @@ module.exports = function(callback){
             it('should merge no functions and add no statistics if functionDeclarations are empty', function(){
                 stubAddMerge();
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
@@ -130,9 +126,9 @@ module.exports = function(callback){
                 stubAddMerge();
                 messages.merging.print = true;
 
-                var consoleSpy = spy(console, 'log');
-                mergeFunctions.combineFunctions(null, null);
-                assert.isTrue(consoleSpy.calledWith(messages.merging.total(0) + ''));
+                var consoleStub = stub(console, 'log');
+                mergeFunctions.combineFunctions(null);
+                assert.isTrue(consoleStub.calledWith(messages.merging.total(0) + ''));
 
                 console.log.restore();
             });
@@ -143,7 +139,7 @@ module.exports = function(callback){
                 setCallLines([150, 150 - mergeFunctions.MAX_SEPERATION - 1, 150 - mergeFunctions.MAX_SEPERATION - 1]);
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
@@ -158,7 +154,7 @@ module.exports = function(callback){
                 setCallLines([150, 150 - mergeFunctions.MAX_SEPERATION, 150 - mergeFunctions.MAX_SEPERATION - 1]);
                 mergeFunctions.functionCalls = test.functionCalls;
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
                 assert.isFalse(test.add.called);
                 assert.isFalse(test.merge.called);
             });
@@ -174,7 +170,7 @@ module.exports = function(callback){
                 mergeFunctions.functionCalls = test.functionCalls;
                 mergeFunctions.functionDeclarations = test.functionDecs;
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
 
                 //test that the calls were correct
                 assert.isTrue(test.add.calledOnce);
@@ -194,7 +190,7 @@ module.exports = function(callback){
             it('should merge 3 functions and add their statistics if they are in the correct seperation distance from each other', function(){
                 prepareFor3Merges();
 
-                mergeFunctions.combineFunctions(null, null);
+                mergeFunctions.combineFunctions(null);
 
                 //test that the calls were correct
                 assert.isTrue(test.add.calledTwice);
@@ -213,23 +209,23 @@ module.exports = function(callback){
                 prepareFor3Merges(true);
                 messages.merging.print = true;
 
-                var consoleSpy = spy(console, 'log');
-                mergeFunctions.combineFunctions(null, true, null);
+                var consoleStub = stub(console, 'log');
+                mergeFunctions.combineFunctions(null);
 
-                assert.isTrue(consoleSpy.calledThrice);
-                assert.equal(consoleSpy.args[0][0], messages.merging.merge(test.functionCalls[1].simpleName, test.functionCalls[0].simpleName) + '');
-                assert.equal(consoleSpy.args[1][0], messages.merging.merge(test.functionCalls[2].simpleName, test.functionCalls[0].simpleName) + '');
-                assert.equal(consoleSpy.args[2][0], messages.merging.total(2) + '');
+                assert.isTrue(consoleStub.calledThrice);
+                assert.equal(consoleStub.args[0][0], messages.merging.merge(test.functionCalls[1].simpleName, test.functionCalls[0].simpleName) + '');
+                assert.equal(consoleStub.args[1][0], messages.merging.merge(test.functionCalls[2].simpleName, test.functionCalls[0].simpleName) + '');
+                assert.equal(consoleStub.args[2][0], messages.merging.total(2) + '');
+
+                console.log.restore();
             });
 
-            it('should call the callback and print the statistics using the previous tests conditions', function(){
+            it('should print the statistics using the previous tests conditions', function(){
                 stubAddMerge();
                 prepareFor3Merges(true);
 
-                var callback = stub();
-                mergeFunctions.combineFunctions(null, callback);
+                mergeFunctions.combineFunctions(null);
 
-                assert.isTrue(callback.calledOnce);
                 assert.isTrue(test.print.calledOnce);
             });
 
@@ -238,7 +234,7 @@ module.exports = function(callback){
 
         describe('#trimFunctionCalls()', function(){
             beforeEach(function(){
-                mergeFunctions = new MergeFunctions({});
+                mergeFunctions = new MergeFunctions({}, {body: {}});
             });
 
             it('should return an empty array when the function calls array is empty', function(){
@@ -274,6 +270,99 @@ module.exports = function(callback){
                 mergeFunctions.functionDeclarations = test.functionDecs;
 
                 assert.deepEqual(mergeFunctions.trimFunctionCalls(), test.functionCalls);
+            });
+        });
+
+        describe('#merge()', function(){
+            function consoleTest(fileName, test){
+                var consoleStub = stub(console, 'log');
+                messages.merging.print = true;
+
+                mergeFunctions.merge(fileName, null);
+                test(consoleStub);
+
+                console.log.restore();
+            }
+
+            beforeEach(function(){
+                test.fileName = 'test.js';
+                test.AST = {body: {}};
+                mergeFunctions = new MergeFunctions({}, test.AST);
+
+                test.findFunctionDeclarations = stub(mergeFunctions, 'findFunctionDeclarations');
+                test.findFunctionCalls = stub(mergeFunctions, 'findFunctionCalls');
+                test.trimFunctionCalls = stub(mergeFunctions, 'trimFunctionCalls');
+                test.combineFunctions = stub(mergeFunctions, 'combineFunctions');
+
+                messages.merging.print = false;
+            });
+
+            afterEach(function(){
+                mergeFunctions.findFunctionDeclarations.restore();
+                mergeFunctions.findFunctionCalls.restore();
+                mergeFunctions.trimFunctionCalls.restore();
+                mergeFunctions.combineFunctions.restore();
+            })
+
+            it('should print an undefined filename merging message if the file is null or undefined', function(){
+                [test.undefined, null].forEach(function(fileName){
+                    consoleTest(fileName, function(consoleStub){
+                        assert.isTrue(consoleStub.calledOnce);
+                        assert.isTrue(consoleStub.calledWith(messages.merging.noFile() + ''));
+                    });
+                });
+            });
+
+            it('should print a file merging message with the given filename', function(){
+                consoleTest(test.fileName, function(consoleStub){
+                    assert.isTrue(consoleStub.calledOnce);
+                    assert.isTrue(consoleStub.calledWith(messages.merging.file('test.js') + ''));
+                });
+            });
+
+            it('should call function declarations with the AST body', function(){
+                mergeFunctions.merge(test.fileName, null);
+                assert.isTrue(test.findFunctionDeclarations.calledOnce);
+                assert.isTrue(test.findFunctionDeclarations.calledWith(test.AST.body));
+            });
+
+            it('should call the find function declarations function with the AST body', function(){
+                mergeFunctions.merge(test.fileName, null);
+                assert.isTrue(test.findFunctionDeclarations.calledOnce);
+                assert.isTrue(test.findFunctionDeclarations.calledWith(test.AST.body));
+            });
+
+            it('should call the find function calls function with the AST body and the function declaration names', function(){
+                var names = ['test1', 'test2'];
+                names.forEach(function(name){
+                    mergeFunctions.functionDeclarations[name] = {};
+                });
+
+                mergeFunctions.merge(test.fileName, null);
+                assert.isTrue(test.findFunctionCalls.calledOnce);
+                assert.isTrue(test.findFunctionCalls.calledWith(test.AST.body, names));
+            });
+
+            it('should call the trim functions to get new trimmed functions then call combine functions with the network', function(){
+                var names = ['test1', 'test2'];
+                names.forEach(function(name){
+                    mergeFunctions.functionDeclarations[name] = {};
+                });
+
+                var functionCalls = [test.callWrapper];
+                test.trimFunctionCalls.returns(functionCalls);
+
+                mergeFunctions.merge(test.fileName, null);
+                assert.deepEqual(mergeFunctions.functionCalls, functionCalls);
+
+                assert.isTrue(test.trimFunctionCalls.calledOnce);
+                assert.isTrue(test.combineFunctions.calledOnce);
+            });
+
+            it('should call the callback with the AST', function(){
+                var callbackStub = stub();
+                mergeFunctions.merge(test.fileName, callbackStub);
+                assert.isTrue(test.combineFunctions.calledOnce);
             });
         });
     });
