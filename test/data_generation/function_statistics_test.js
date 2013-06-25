@@ -9,21 +9,11 @@ var _ = require('lodash'),
 var FunctionStatistics = require('../../data_generation/function_statistics.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     test = require('../test_data.js'),
+    helper = new require('../test_helpers.js')(),
     u = require('../../utility_functions.js');
 
 module.exports = function(callback){
     describe('functionStatistics', function(){
-
-        // Tests all combinations of to and from using the sent in callback for equality checks
-        function dualENUTest(testCallback){
-            return (function testIt(to, from){
-                testCallback(to, from);
-
-                return testIt;
-            })()(test.undefined, null)(test.undefined, {})
-            (null)(null, null)(null, {})
-            ({})({}, null)({}, {});
-        }
 
         var functionStatistics;
         beforeEach(function(){
@@ -37,14 +27,14 @@ module.exports = function(callback){
 
         describe('#add()', function(){
             it('should do nothing and return an object empty object when either call wrapper is enu', function(){
-                dualENUTest(function(to, from){
+                helper.dualENUTest(function(to, from){
                     assert.deepEqual(functionStatistics.add(to, from, test.functionWrapper, test.functionWrapper), {});
                     return assert.deepEqual(functionStatistics.statistics, []);
                 });
             });
 
             it('should do nothing and return an object empty object when either function wrapper is enu', function(){
-                dualENUTest(function(to, from){
+                helper.dualENUTest(function(to, from){
                     assert.deepEqual(functionStatistics.add(test.callWrapper, test.callWrapper, to, from), {});
                     return assert.deepEqual(functionStatistics.statistics, []);
                 });

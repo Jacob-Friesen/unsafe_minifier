@@ -6,6 +6,7 @@ var _ = require('lodash'),
 // ENU = empty/undefined/null
 var returnHandler = new require('../../AST_modification/return_handler.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js'),
+    helper = new require('../test_helpers.js')(),
     test = require('../test_data.js');
 
 module.exports = function(callback){
@@ -20,14 +21,12 @@ module.exports = function(callback){
         });
 
         describe('#addArgsToElements()', function() {
-            it('should throw an error when the elements argument is null or undefined', function() {
-                (function run(arg1, arg2){
+            it('should throw an error when the item or elements argument is null or undefined', function() {
+                helper.dualNullUndefinedTest(function(arg1, arg2){
                     expect(function(){
                         returnHandler.addArgsToElements(arg1, arg2);
                     }).to.throw(returnHandler.addArgsToElementsError);
-
-                    return run;
-                })()(null)(null, null)({}, null);// Send in 2 undefineds then one null and a undefined and etc.
+                });
             });
 
             it('should return empty elements when the element sent in is empty and the object to add to is ENU', function() {
@@ -69,28 +68,25 @@ module.exports = function(callback){
             });
 
             it('should return an object with an empty return and indication of no 2nd return, when given 2 ENU returns', function(){
-                (function run(arg1, arg2){
+                helper.dualENUTest(function(arg1, arg2){
                     assert.deepEqual( returnHandler.generateNewReturn(arg1, arg2), {newReturn: test.returnTemplate, returnInTo: false} );
-                    return run;
-                })()(null)(null, null)({}, null)({},{});// Send in 2 undefineds then one null and a undefined and etc.
+                });
             });
 
             it('should return an object with the 1st return\'s element in an Array Expression and indication of a return, when 2nd is ENU', function(){
                 setReturnTemplateElements([test.return1.argument]);
 
-                (function run(arg){
+                helper.ENUTest(function(arg){
                     assert.deepEqual( returnHandler.generateNewReturn(test.return1, arg), {newReturn: test.returnTemplate, returnInTo: true} );
-                    return run;
-                })()(null)({});
+                });
             });
 
             it('should return an object with the 1st return\'s argument and no indication of a return, when the 1st return is ENU', function(){
                 test.returnTemplate.argument = test.return1.argument;
 
-                (function run(arg){
+                helper.ENUTest(function(arg){
                     assert.deepEqual( returnHandler.generateNewReturn(arg, test.return1), {newReturn: test.returnTemplate, returnInTo: false} );
-                    return run;
-                })()(null)({});
+                });
             });
 
             it('should return an object with the 2nd return\'s element + 1st returns element and an indication of a return, when 2 returns are ' + 
@@ -130,14 +126,12 @@ module.exports = function(callback){
         // You may notice I don't do seperate array to single element returns. This is because the previous tests should cover those cases.
         describe('#moveReturns()', function() {
             it('should return false if both function bodies are ENU', function(){ 
-                (function run(arg1, arg2){
+                helper.dualENUTest(function(arg1, arg2){
                     assert.isFalse(returnHandler.moveReturns(arg1, arg2));
-                    return run;
-                })()(null)({})(null, {})({}, null)({}, {});
+                });
             });
 
             it('should return false if any of the arguments are ENU', function(){
-                // Once again, not every combination but tests all important ENUs
                 (function run(arg1, arg2){
                     assert.isFalse(returnHandler.moveReturns(arg1, arg2));
                     return run;

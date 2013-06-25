@@ -29,7 +29,7 @@ var messages = {
 
 messages.merging = messages.create({
     noFile: function(){
-        return this.form('merging file with no name...')
+        return this.form('merging file with no name...');
     },
 
     file: function(fileName){

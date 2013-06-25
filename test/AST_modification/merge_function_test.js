@@ -8,6 +8,7 @@ var _ = require('lodash'),
 
 var MergeFunction = require('../../AST_modification/merge_function.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
+    helper = new require('../test_helpers.js')(),
     test = require('../test_data.js'),
     u = require('../../utility_functions.js');
 
@@ -82,22 +83,20 @@ module.exports = function(callback){
         });
 
         describe('#removeFromParentArray()', function() {
-            it('should do nothing when the parent is not an array', function() {
-                (function remove(parentArray){
+            it('should do nothing when the parent is ENU', function() {
+                helper.ENUTest(function(parentArray){
                     assert.isTrue(mergeFunction.removeFromParentArray(null, parentArray));
-                    return remove;
-                })()(null)({});
+                });
             });
 
             it('should remove nothing when item to remove is ENU or has no line number', function() {
                 test.callExpression1.loc.start = null;
                 var parentArray = _.cloneDeep(test.parentArray);
 
-                (function remove(toRemove){
+                helper.ENUTest(function(toRemove){
                     assert.isTrue(mergeFunction.removeFromParentArray(toRemove, test.parentArray));
                     assert.deepEqual(parentArray, test.parentArray);
-                    return remove;
-                })()(null)({})(test.callExpression1);
+                })(test.callExpression1);
             });
 
             it('should remove nothing when the item to remove\'s line number doesn\'t appear in the parent array', function() {
@@ -129,10 +128,9 @@ module.exports = function(callback){
 
         describe('#removeFromParent()', function() {
             it('should do nothing when ENUs are sent in', function() {
-                (function remove(item, parent){
+                helper.dualENUTest(function(item, parent){
                     assert.isTrue(mergeFunction.removeFromParent(item, parent));
-                    return remove;
-                })()({})({}, null)({}, {})({}, [])(null)(null, null)(null, {})(null, []);
+                })
             });
 
             function arrayNothingTest(array){
@@ -241,28 +239,25 @@ module.exports = function(callback){
                 return testParentRemoval;
             }
 
-            it('should do nothing and return false when both variables sent in are enu', function(){
-                (function merge(to, from){
+            it('should do nothing and return false when both variables sent in are ENU', function(){
+                helper.dualENUTest(function(to, from){
                     assert.isFalse(mergeFunction.mergeFunctions(to, from));
-                    return merge;
-                })()(null)(null, {})(null, null)({})({}, null)({}, {});
+                });
             });
 
-            it('should do nothing and return false when one variable sent in is enu', function(){
-                var to = _.cloneDeep(test.emptyFunctionExpression);
-                var from = _.cloneDeep(test.functionDeclaration);
+            it('should do nothing and return false when one variable sent in is ENU', function(){
+                var to = _.cloneDeep(test.emptyFunctionExpression),
+                    from = _.cloneDeep(test.functionDeclaration);
 
-                (function merge(to, from){
+                helper.ENUTest(function(from){
                     assert.isFalse(mergeFunction.mergeFunctions(to, from));
+                    assert.deepEqual(to, test.emptyFunctionExpression);
+                });
 
-                    if (!u.enu(to))
-                        assert.deepEqual(to, test.emptyFunctionExpression);
-                    else
-                        assert.deepEqual(from, test.functionDeclaration);
-
-                    return merge;
-                })(to)(to, null)(to, {})// to is not enu
-                  (test.undefined, from)(null, from)({}, from);// from is not enu
+                helper.ENUTest(function(to){
+                    assert.isFalse(mergeFunction.mergeFunctions(to, from));
+                    assert.deepEqual(from, test.functionDeclaration);
+                });
             });
 
             it('should throw an error when either to or from functions possess no param property (unlikely)', function(){
@@ -275,7 +270,6 @@ module.exports = function(callback){
 
                     return merge;
                 })
-
                 // Test ones not having, the other, then both
                 (test.functionDeclaration.params = null)
 
@@ -321,7 +315,6 @@ module.exports = function(callback){
 
                     return merge;
                 })
-
                 // Test ones not having, the other, then both
                 (test.emptyFunctionExpression.body.body = null)
 
@@ -364,7 +357,7 @@ module.exports = function(callback){
                 mergeFunction.isDuplicateInsert.restore();
             });
 
-            it('should not remove from from its parent, when fromParent is enu', function(){
+            it('should not remove from from its parent, when fromParent is ENU', function(){
                 testParentRemoval()(null)({});
             });
 
@@ -382,7 +375,7 @@ module.exports = function(callback){
                 }
             });
 
-            it('should return an empty string if the object sent in is enu', function(){
+            it('should return an empty string if the object sent in is ENU', function(){
                 assert.equal(mergeFunction.findObjectName(), '');
                 assert.equal(mergeFunction.findObjectName(null), '');
                 assert.equal(mergeFunction.findObjectName({}), '');
@@ -396,11 +389,14 @@ module.exports = function(callback){
                 assert.equal(mergeFunction.findObjectName({unrelated: 'test'}), '');
             });
 
-            it('should return an empty string if object is enu 3 levels deep', function(){
+            it('should return an empty string if object is ENU 3 levels deep', function(){
                 (function test(){
                     assert.equal(mergeFunction.findObjectName(test.level3), '');
                     return test;
-                })()(test.level3.object = test.undefined)(test.level3.object = {});
+                })
+                ()
+                (test.level3.object = test.undefined)
+                (test.level3.object = {});
             });
 
             it('should return an empty string if there is no name or object property at one 3 levels deep', function(){
@@ -415,7 +411,7 @@ module.exports = function(callback){
         });
 
         describe('#getVariableName()', function(){
-            it('should return an empty string if the object sent in is enu', function(){
+            it('should return an empty string if the object sent in is ENU', function(){
                 assert.equal(mergeFunction.getVariableName(), '');
                 assert.equal(mergeFunction.getVariableName(null), '');
                 assert.equal(mergeFunction.getVariableName({}), '');
@@ -427,7 +423,7 @@ module.exports = function(callback){
 
             it('should be able to get the name of a AssignmentExpression\'s that has a nested object', function(){
                 assert.equal(mergeFunction.getVariableName(test.assignmentExpressionNestedObject), 
-                    test.assignmentExpressionNestedObject.left.object.name);
+                test.assignmentExpressionNestedObject.left.object.name);
             });
 
             it('should be able to get an ExpressionStatement\s name', function(){
@@ -488,18 +484,16 @@ module.exports = function(callback){
                 }
             }
 
-            it('should do nothing if from or to are enu', function(){
-                (function split(to, from){
+            it('should do nothing if from or to are ENU', function(){
+                helper.dualENUTest(function(to, from){
                     testNoModify(1, to, from, test.assignmentParent);
-                    return split;
-                })()(null)(null, {})(null, null)({})({}, null)({}, {});
+                });
             });
 
-            it('should do nothing if index is null/undefined or to\'s parent are enu', function(){
-                (function split(index, toParent){
+            it('should do nothing if index is null/undefined or to\'s parent are ENU', function(){
+                helper.dualENUTest(function(index, toParent){
                     testNoModify(index, test.variableDeclaration1, test.variableDeclaration2, toParent);
-                    return split;
-                })()(null)(null, {})(null, null);
+                });
             });
 
             describe('splitting variables for the first time', function(){
@@ -618,34 +612,28 @@ module.exports = function(callback){
                 test.all.fromAssignment = _.cloneDeep(test.assignmentExpression);
             });
 
-            it('should do nothing when toAssignment is enu and fromAssignment is enu', function(){
-                (function copy(to, from){
+            it('should do nothing when toAssignment is ENU and fromAssignment is ENU', function(){
+                helper.dualENUTest(function(to, from){
                     var original = _.cloneDeep(to);
                     test.notFromToAssignment.toAssignment = to;
                     test.notFromToAssignment.fromAssignment = from;
                     to = mergeFunction.copyFromAssignment(test.notFromToAssignment);
 
                     assert.deepEqual(original, to);
-
-                    return copy;
-                })()(test.undefined, null)(test.undefined, {})
-                (null)(null, null)(null, {})
-                ({})({}, null)({}, {});
+                });
             });
 
-            it('should do nothing when bothHaveReturns is false and fromAssignment is enu', function(){
+            it('should do nothing when bothHaveReturns is false and fromAssignment is ENU', function(){
                 test.notFromToAssignment.toAssignment = test.assignmentExpression;
                 test.notFromToAssignment.bothHaveReturns = false;
 
-                (function copy(from){
+                helper.ENUTest(function(from){
                     var original = _.cloneDeep(test.assignmentExpression);
                     test.notFromToAssignment.fromAssignment = from;
                     var to = mergeFunction.copyFromAssignment(test.notFromToAssignment);
 
                     assert.deepEqual(original, to);
-
-                    return copy;
-                })()(null)({});
+                });
             });
 
             // only going to test when both to and from assignments have arguments as splitting has been tested a lot more in detail in the
@@ -674,33 +662,27 @@ module.exports = function(callback){
                 assert.equal(expression.left.name, toAssignmentOrig.left.name);
             });
 
-            it('should do nothing if equivalent to last but to\'s assignment parent is enu', function(){
+            it('should do nothing if equivalent to last but to\'s assignment parent is ENU', function(){
                 var original = _.cloneDeep(test.assignmentExpression);
 
-                (function copy(parent){
+                helper.ENUTest(function(parent){
                     test.all.toAssignmentParent = parent;
                     var to = mergeFunction.copyFromAssignment(test.all);
                     assert.deepEqual(test.assignmentExpression, original);
-
-                    return copy
-                })()(null)({});
+                });
             });
 
-            it('should do nothing if fromAssignment is not enu and to or toParent are enu', function(){
+            it('should do nothing if fromAssignment is not ENU and to or toParent are ENU', function(){
                 var original = _.cloneDeep(test.all.toAssignment);
                 test.all.bothHaveReturns = false;
 
-                (function copy(to, toParent){
+                helper.dualENUTest(function(to, toParent){
                     test.all.to = to;
                     test.all.toParent = toParent;
                     var to = mergeFunction.copyFromAssignment(test.all);
 
                     assert.deepEqual(to, original);
-
-                    return copy
-                })()(test.undefined, null)(test.undefined, {})
-                (null)(null, null)(null, {})
-                ({})({}, null)({}, {});
+                });
             });
 
             it('should make toAssignment be fromAssignment with .right as to and its start number incremented if from is an AssignmentExpression', 
@@ -770,23 +752,20 @@ module.exports = function(callback){
             });
 
             // These will not cover every null case but represent a large enough sample to cover everything
-            it('should do nothing if to or to\'s parent are enu', function(){
-                (function merge(to, toParent){
+            it('should do nothing if to or to\'s parent are ENU', function(){
+                helper.dualENUTest(function(to, toParent){
                     test.notTo.to = to;
                     test.notTo.toParent = toParent;
                     mergeFunction.mergeCalls(test.notTo);
-
-                    return merge;
-                })()(null)(null, {})(null, null)({})({}, null)({}, {});
+                });
             });
 
             // fromParent checking tests are done later with the deletion from fromParent tests
-            it('should do nothing if from is enu', function(){
-                (function merge(from){
+            it('should do nothing if from is ENU', function(){
+                helper.ENUTest(function(from){
                     test.notFrom.from = from;
                     mergeFunction.mergeCalls(test.notFrom);
-                    return merge;
-                })()(null)({});
+                });
             });
 
             it('should throw an error if either from or to have either no arguments object or an undefined one', function(){
@@ -796,7 +775,8 @@ module.exports = function(callback){
                     }).to.throw(mergeFunction.argsCouldntCopy(test.all.to, test.all.from));
 
                     return mergeArgTest;
-                })(test.all.to = {red: 'test'})
+                })
+                (test.all.to = {red: 'test'})
                 (test.all.to = {arguments: null})
                 (test.all.from = {red: 'test'})
                 (test.all.from = {arguments: null});
@@ -821,15 +801,14 @@ module.exports = function(callback){
                 testArgs(modified, test.callExpression1, [test.callExpression1.arguments[0], modified.arguments[0]]);
             });
 
-            it('should not return a modified toAssignment if fromAssignment is enu', function(){
-                (function merge(from){
+            it('should not return a modified toAssignment if fromAssignment is ENU', function(){
+                helper.ENUTest(function(from){
                     mergeFunction.mergeCalls(test.callExpression2, test.blockBodyParent, test.assignmentExpression, test.assignmentParent,
                         _.cloneDeep(test.callExpression2), _.cloneDeep(test.blockBodyParent), from, true);
-                    return merge;
-                })()(null)({});
+                });
             });
 
-            it('should return a modified toAssignment by using from assignment by combining arguments if fromAssignment is not enu', function(){
+            it('should return a modified toAssignment by using from assignment by combining arguments if fromAssignment is not ENU', function(){
                 var originalParentLength = test.assignmentParent.length;
                 var to = mergeFunction.mergeCalls(test.all);
 
@@ -859,25 +838,6 @@ module.exports = function(callback){
         });
 
         describe('#merge()', function() {
-            function testCallbackOnly(testCalls){
-                (function merge(to, from){
-                    test.called = false;
-                    if (testCalls)
-                        mergeFunction.merge(to, from, test.functionWrapper, test.functionWrapper, test.mergeCallback);
-                    else
-                        mergeFunction.merge(test.callWrapper, test.callWrapper, to, from, test.mergeCallback);
-                    assert.isTrue(test.called);
-
-                    assert.isUndefined(_.find(test.calls, function(call){
-                        return call.called;
-                    }));
-
-                    return merge;
-                })()(test.undefined, null)(test.undefined, {})
-                (null)(null, null)(null, {})
-                ({})({}, null)({}, {});
-            }
-
             beforeEach(function(){
                 test.calls = [
                     spy(mergeFunction, 'mergeFunctions'),

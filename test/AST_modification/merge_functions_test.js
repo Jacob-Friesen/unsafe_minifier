@@ -44,6 +44,10 @@ module.exports = function(callback){
             });
         });
 
+        it('should throw an error when the files or AST sent in is null or undefined', function(){
+
+        });
+
         describe('#combineFunctions()', function(){
             function stubAddMerge(){
                 test.add = stub(mergeFunctions.functionStatistics, 'add');
@@ -159,7 +163,7 @@ module.exports = function(callback){
                 assert.isFalse(test.merge.called);
             });
 
-            it('should merge 2 functions and add their statistics if they are in the correct seperation distance', function(){
+            it('should merge 2 functions and add their statistics if they are in the correct separation distance', function(){
                 test.add = spy(mergeFunctions.functionStatistics, 'add');
                 test.merge = spy(mergeFunctions.mergeFunction, 'merge');
 
@@ -176,9 +180,9 @@ module.exports = function(callback){
                 assert.isTrue(test.add.calledOnce);
                 assert.isTrue(test.merge.calledOnce);
                 assert.isTrue(test.add.calledWith(test.functionCalls[1], test.functionCalls[2], 
-                    test.functionDecs['test1'], test.functionDecs['test2']));
+                test.functionDecs['test1'], test.functionDecs['test2']));
                 assert.isTrue(test.merge.calledWith(test.functionCalls[1], test.functionCalls[2], 
-                    test.functionDecs['test1'], test.functionDecs['test2']));
+                test.functionDecs['test1'], test.functionDecs['test2']));
 
                 // test the contents of test.functionCalls were actually modified, these are very basic tests as more detailed modification tests
                 // take place in merge_function_test
@@ -252,7 +256,7 @@ module.exports = function(callback){
                 assert.deepEqual(mergeFunctions.trimFunctionCalls(), []);
             });
 
-            it('should return an array contianing calls that have a matching function declaration name', function(){
+            it('should return an array containing calls that have a matching function declaration name', function(){
                 test.functionCalls.forEach(function(item, index){
                     if (index < test.functionCalls.length - 1){
                         test.functionDecs[item.simpleName + 't'] = item;
@@ -265,7 +269,7 @@ module.exports = function(callback){
                 assert.deepEqual(mergeFunctions.trimFunctionCalls(), [test.functionCalls[2]]);
             });
 
-            it('should return an array the same function Call array as before when each call has a matching declaration', function(){
+            it('should return an array the same function call array as before when each call has a matching declaration', function(){
                 mergeFunctions.functionCalls = test.functionCalls;
                 mergeFunctions.functionDeclarations = test.functionDecs;
 
