@@ -6,7 +6,7 @@ var u = require('../utility_functions.js'),
     AST_structure = require('./AST_structures.js');
 
 // Merges two function calls together, will also merge the corresponding function bodies.
-module.exports = function mergeFunction(){
+module.exports = function MergeFunction(){
     var mergeName = null,// Tracks the current merge name for above
         merges = [],// List of merged functions in string form, used to check if I am adding a duplicate function body
         _this = this;
@@ -60,9 +60,6 @@ module.exports = function mergeFunction(){
     // 2. If from is part of an assignment make the necessary modifications to to
     // 3. Erase the function call merging to (if from's parent is provided)
     // Returns the modified version of to's assignment expression
-    this.argsCouldntCopy = function(to, from){
-        return "Error: Second calls arguments could not be copied into the first: \n"  + to + '\n' + from;
-    }
     this.mergeCalls = function(o){
         if (u.enu(o.to) || u.enu(o.toParent) || u.enu(o.from))
             return true;
@@ -80,7 +77,7 @@ module.exports = function mergeFunction(){
             }
         } 
         else
-            throw(_this.argsCouldntCopy(o.to, o.from));
+            messages.merging.argsCouldntCopy(o.to, o.from).error();
         
         // 2. Change to's structure if from is part of an assignment
         if (!u.enu(o.fromAssignment)){
@@ -246,12 +243,6 @@ module.exports = function mergeFunction(){
     // 1. Concatenate parameter lists
     // 2. Insert second functions body into first
     // 3. Delete second function declaration (from's parent is needed to guarantee this)
-    this.paramCouldntCopy = function(to, from){
-        return "Error: Second function parameters could not be copied into the first: \n"  + to + '\n' + from;
-    }
-    this.bodyCouldntCopy = function(to, from){
-        return "Error: Second function body could not be copied into the first: \n"  + to + '\n' + from;
-    }
     this.mergeFunctions = function(to, from, fromParent){
         var bothHaveReturns = false;
         if (u.enu(to) || u.enu(from))
@@ -268,7 +259,7 @@ module.exports = function mergeFunction(){
             from.params.reverse();// Note that reverse is in place so I must restore the array
         }
         else
-            throw(this.paramCouldntCopy(to, from));
+            messages.merging.paramsCouldntCopy(to, from).error();
         
         // 2. Copy second function body into the first
         if (u.hasOwnPropertyChain(to, 'body', 'body') && u.hasOwnPropertyChain(from, 'body', 'body')){
@@ -289,7 +280,7 @@ module.exports = function mergeFunction(){
             }
         }
         else
-            throw(this.bodyCouldntCopy(to, from));
+            messages.merging.bodyCouldntCopy(to, from);
         
         // 3. Delete second function declaration
         this.removeFromParent(from, fromParent);

@@ -10,7 +10,8 @@ if (_.contains(process.argv, '---u')){
 	    './AST_modification/return_handler_test',
 	    './AST_modification/merge_function_test',
 	    './AST_modification/merge_functions_test',
-	    './data_generation/function_statistics_test'
+	    './data_generation/function_statistics_test',
+	    './data_generation/index_test'
 	]
 
 	units.forEach(function(file){

@@ -8,9 +8,9 @@ var u = require('../utility_functions.js'),
 // Handles function merging for the given AST. Finds most of the calls and functions in the code, keep in mined
 // JS is extremely expressive and this system is a prototype. Function declerations and calls that will not be
 // discovered are in findFunctionDeclarations and findFunctionCalls respectively.
-module.exports = function mergeFunctions(files, AST){
+module.exports = function MergeFunctions(files, AST){
     if (u.nullOrUndefined(files) || u.nullOrUndefined(AST) || u.nullOrUndefined(AST.body))
-        throw('Error: files and AST.body must be specified for this object');
+        messages.merging.noFilesAST().error();
         
     var context = this;
     this.mergeFunction = new MergeFunction();
@@ -131,10 +131,8 @@ module.exports = function mergeFunctions(files, AST){
             if (!u.nullOrUndefined(possibleName))
                 name = possibleName;
         }
-        else {
-            console.log(function_data);
-            throw('Error: A function declaration has no name!');
-        }
+        else
+            messages.merging.noNameFunction(function_data).error();
             
         context.functionDeclarations[name] = {
             data: function_data,

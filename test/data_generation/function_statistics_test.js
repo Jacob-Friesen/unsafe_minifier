@@ -13,7 +13,7 @@ var FunctionStatistics = require('../../data_generation/function_statistics.js')
     u = require('../../utility_functions.js');
 
 module.exports = function(callback){
-    describe('functionStatistics', function(){
+    describe('FunctionStatistics', function(){
 
         var functionStatistics;
         beforeEach(function(){
@@ -23,6 +23,13 @@ module.exports = function(callback){
 
         after(function(){
             callback();
+        });
+
+        describe('#constructor()', function(){
+            it('should have the correct variables set', function(){
+                functionStatistics = new FunctionStatistics();
+                assert.deepEqual(functionStatistics.statistics, []);
+            });
         });
 
         describe('#add()', function(){

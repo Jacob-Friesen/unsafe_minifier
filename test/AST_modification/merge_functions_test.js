@@ -1,6 +1,7 @@
 var _ = require('lodash'),
     chai = require('chai'),
     assert = chai.assert,
+    expect = chai.expect,
     sinon = require('sinon'),
     stub = sinon.stub,
     spy = sinon.spy;
@@ -8,12 +9,15 @@ var _ = require('lodash'),
 var u = require('../../utility_functions.js'),
     messages = new require('../../messages.js')(),
     MergeFunctions = require('../../AST_modification/merge_functions.js'),
+    MergeFunction = require('../../AST_modification/merge_function.js'),
+    FunctionStatistics = require('../../data_generation/function_statistics.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
+    helper = new require('../test_helpers.js')(),
     test = require('../test_data.js');
 
 module.exports = function(callback){
 
-    describe('mergeFunctions', function(){
+    describe('MergeFunctions', function(){
         after(function(){
             callback();
         });
@@ -44,8 +48,26 @@ module.exports = function(callback){
             });
         });
 
-        it('should throw an error when the files or AST sent in is null or undefined', function(){
+        describe('#constructor()', function(){
+            it('should throw an error when the files or AST sent in is null or undefined', function(){
+                helper.dualNullUndefinedTest(function(files, AST){
+                    expect(function(){
+                        mergeFunctions = new MergeFunctions(files, AST);
+                    }).to.throw(messages.merging.noFilesAST() + '');
+                });
+            });
 
+            it('should have the correct variables set', function(){
+                mergeFunctions = new MergeFunctions({}, {body: {}});
+
+                helper.sameStructureTest(mergeFunctions.functionStatistics, new FunctionStatistics());
+                helper.sameStructureTest(mergeFunctions.mergeFunction, new MergeFunction())
+                assert.deepEqual(mergeFunctions.files, {});
+                assert.isTrue(_.isNumber(mergeFunctions.MIN_SEPERATION));
+                assert.isTrue(_.isNumber(mergeFunctions.MAX_SEPERATION));
+                assert.deepEqual(mergeFunctions.functionDeclarations, {});
+                assert.deepEqual(mergeFunctions.functionCalls, []);
+            });
         });
 
         describe('#combineFunctions()', function(){

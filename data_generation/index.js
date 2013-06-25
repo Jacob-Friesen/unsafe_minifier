@@ -11,9 +11,9 @@ var PRINT_MERGES = true;
 //constructor, needs base input file to generate the data combinations into the output file.
 module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files){
     if (u.nullOrUndefined(rawDataDirectory) || u.nullOrUndefined(mergedDataDirectory))
-        throw('Error: raw and merged directories must be specified.');
+        messages.generation.rawMergedDirectories().error();
     if (u.nullOrUndefined(files))
-        throw('Error: files must be specified in main.js.');
+        messages.generation.filesNotSpecified().error();
     
     this.once_done = null;
     var context = this;

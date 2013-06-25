@@ -1,6 +1,7 @@
 var _ = require('lodash');
 
 var u = require('../utility_functions.js'),
+    messages = new require('../messages.js')();
     AST_structure = require('./AST_structures.js');
 
 // Handles moving returns in code, yes it really is this complicated.
@@ -73,10 +74,9 @@ module.exports = function ReturnHandler(){
     
     // Adds all the elements of the arguments from item to the arguments in the elements list. Returns the elements list with those arguments appended
     // at the beginning.
-    this.addArgsToElementsError = 'Elements to add to was null or undefined.';
     this.addArgsToElements = function(item, elements){
         if (u.nullOrUndefined(elements))
-            throw(this.addArgsToElementsError);
+            messages.merging.addArgsToElements().error();
 
         if (!_.isEmpty(item)){
             if (u.hasOwnPropertyChain(item, 'argument', 'elements')){

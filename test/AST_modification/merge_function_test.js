@@ -7,13 +7,15 @@ var _ = require('lodash'),
     expect = chai.expect;
 
 var MergeFunction = require('../../AST_modification/merge_function.js'),
+    Return_Handler = require('../../AST_modification/return_handler.js'),
+    u = require('../../utility_functions.js'),
+    messages = new require('../../messages.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     helper = new require('../test_helpers.js')(),
-    test = require('../test_data.js'),
-    u = require('../../utility_functions.js');
+    test = require('../test_data.js');
 
 module.exports = function(callback){
-    describe('mergeFunction', function() {
+    describe('MergeFunction', function() {
         
         var mergeFunction;
         beforeEach(function(){
@@ -23,6 +25,16 @@ module.exports = function(callback){
 
         after(function(){
             callback();
+        });
+
+        describe('#constructor()', function(){
+            it('should have the correct variables set', function(){
+                mergeFunction = new MergeFunction();
+
+                assert.deepEqual(mergeFunction.merges, []);
+                helper.sameStructureTest(mergeFunction.returnHandler, new Return_Handler());
+                assert.isTrue(_.isString(mergeFunction.SPLIT_VAR));
+            });
         });
         
         describe('#isDuplicateInsert()', function() {
@@ -262,11 +274,11 @@ module.exports = function(callback){
 
             it('should throw an error when either to or from functions possess no param property (unlikely)', function(){
                 var params = test.functionDeclaration.params;
-                
+
                 (function merge(){
                     expect(function(){
                         mergeFunction.mergeFunctions(test.functionDeclaration, test.emptyFunctionExpression);
-                    }).to.throw( mergeFunction.paramCouldntCopy(test.functionDeclaration, test.emptyFunctionExpression) );
+                    }).to.throw( messages.merging.paramsCouldntCopy(test.functionDeclaration, test.emptyFunctionExpression) );
 
                     return merge;
                 })
@@ -311,7 +323,7 @@ module.exports = function(callback){
                 (function merge(){
                     expect(function(){
                         mergeFunction.mergeFunctions(test.emptyFunctionExpression, test.functionDeclaration);
-                    }).to.throw( mergeFunction.bodyCouldntCopy(test.emptyFunctionExpression, test.functionDeclaration) );
+                    }).to.throw( messages.merging.bodyCouldntCopy(test.emptyFunctionExpression, test.functionDeclaration) );
 
                     return merge;
                 })
@@ -772,7 +784,7 @@ module.exports = function(callback){
                 (function mergeArgTest(testObject){
                     expect(function(){
                         mergeFunction.mergeCalls(test.all);
-                    }).to.throw(mergeFunction.argsCouldntCopy(test.all.to, test.all.from));
+                    }).to.throw(messages.merging.argsCouldntCopy(test.all.to, test.all.from));
 
                     return mergeArgTest;
                 })

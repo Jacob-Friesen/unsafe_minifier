@@ -5,13 +5,14 @@ var _ = require('lodash'),
 
 // ENU = empty/undefined/null
 var returnHandler = new require('../../AST_modification/return_handler.js')(),
+    messages = new require('../../messages.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     helper = new require('../test_helpers.js')(),
     test = require('../test_data.js');
 
 module.exports = function(callback){
 
-    describe('returnHandler', function() {
+    describe('ReturnHandler', function() {
         beforeEach(function(){
             test = test.resetTestData();
         });
@@ -25,7 +26,7 @@ module.exports = function(callback){
                 helper.dualNullUndefinedTest(function(arg1, arg2){
                     expect(function(){
                         returnHandler.addArgsToElements(arg1, arg2);
-                    }).to.throw(returnHandler.addArgsToElementsError);
+                    }).to.throw(messages.merging.addArgsToElements());
                 });
             });
 

@@ -1,7 +1,10 @@
 var u = require('./utility_functions.js');
 
-// Contains all messages for the application, each message object has an option to disable itself
+// Contains all messages for the application, including errors, each message object has an option to disable itself
 var messages = {
+    error: function(err){
+        throw(err);
+    },
 
     // Create a new object with toString as the message and has an send method. Has all the default methods of String. Prints if the printing object
     // has print set to true.
@@ -11,6 +14,10 @@ var messages = {
         var print = this.print;
         msg.send = function(){
             if (print) console.log(message);
+        }
+
+        msg.error = function(){
+            messages.error(message);
         }
 
         return msg;
@@ -42,6 +49,40 @@ messages.merging = messages.create({
 
     total: function(merges){
         return this.form('merged ' + merges + ' functions.\n');
+    },
+
+    noFilesAST: function(){
+        return this.form('Error: files and AST.body must be specified for mergeFunctions');
+    },
+
+    addArgsToElements: function(){
+        return this.form('Error: Elements to add to was null or undefined.');
+    },
+
+    argsCouldntCopy: function(to, from){
+        return this.form("Error: Second calls arguments could not be copied into the first: \n" + to + '\n' + from);
+    },
+
+    paramsCouldntCopy: function(to, from){
+        return this.form("Error: Second function parameters could not be copied into the first: \n" + to + '\n' + from);
+    },
+
+    bodyCouldntCopy: function(to, from){
+        return this.form("Error: Second function body could not be copied into the first: \n"  + to + '\n' + from);
+    },
+
+    noNameFunction: function(function_data){
+        return this.form('Error: A function declaration has no name!\n' + function_data);
+    }
+});
+
+messages.generation = messages.create({
+    rawMergedDirectories: function(){
+        return this.form('Error: raw and merged directories must be specified.');
+    },
+
+    filesNotSpecified: function(){
+        return this.form('Error: files must be specified in main.js.');
     }
 });
 

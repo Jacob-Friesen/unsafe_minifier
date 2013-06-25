@@ -1,3 +1,6 @@
+var chai = require('chai'),
+    assert = chai.assert;
+
 // Any of the tests return the function that calls the callback so they can be called again with more arguments sent in after the initial run through
 module.exports = function(){
 	
@@ -20,6 +23,14 @@ module.exports = function(){
         ({})({}, null)({}, {});
     }
 
+    // Tests all null and undefined combinations for a single argument
+    this.nullUndefinedTest = function(testCallback){
+        return (function testIt(arg){
+            testCallback(arg);
+            return testIt;
+        })()(null);
+    }
+
     // Tests all null and undefined combinations of the first and second argument using the sent in callback
    	this.dualNullUndefinedTest = function(testCallback){
         return (function testIt(arg1, arg2){
@@ -27,6 +38,16 @@ module.exports = function(){
 
             return testIt;
         })()(null)(null, null)({}.undefined, null);
+    }
+
+    // Checks if all the properties of the given objects are present in each other
+    this.sameStructureTest = function test(obj1, obj2){
+        for(property in obj1)
+            assert.isDefined(obj2[property]);
+        for(property in obj2)
+            assert.isDefined(obj1[property]);
+
+        return test;
     }
 
 	return this;

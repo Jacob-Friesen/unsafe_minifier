@@ -1,5 +1,6 @@
 var chai = require('chai'),
     assert = chai.assert,
+    expect = chai.expect,
     sinon = require('sinon'),
     stub = sinon.stub;
 
@@ -14,6 +15,14 @@ module.exports = function(callback){
 
     after(function(){
         callback();
+    });
+
+    describe('#error()', function(){
+        it('should throw an error with the given message', function(){
+            expect(function(){
+                messages.error('test')
+            }).to.throw('test');
+        })
     });
 
     describe('#messages()', function(){
@@ -42,6 +51,17 @@ module.exports = function(callback){
                 assert.isTrue(consoleStub.calledWith('test'));
 
                 console.log.restore();
+            });
+
+            it('should have a error call that calls the message.error function', function(){
+                var errorStub = stub(messages, 'error');
+
+                messages.form('test').error();
+
+                assert.isTrue(errorStub.calledOnce);
+                assert.isTrue(errorStub.calledWith('test'));
+
+                messages.error.restore();
             });
 
             it('should not print when the wrapping objects print property is false', function(){

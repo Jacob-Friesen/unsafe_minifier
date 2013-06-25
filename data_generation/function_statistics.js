@@ -3,7 +3,7 @@ var _ = require('lodash'),
     u = require('../utility_functions.js');
 
 // Records statistics by writing into an internal array (statistics) and can write JSON contents to a file.
-module.exports = function functionStatistics(){
+module.exports = function FunctionStatistics(){
     this.statistics = [
         //{
         //      name: <callTo-callFrom>
