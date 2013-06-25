@@ -51,7 +51,8 @@ Below is an explanation of the main files and directories in this directory. Det
 **Files:**
  * **Makefile** Defines the commands to test this application.
  * **main.js:** Central file that runs everything.
- * **Report.pdf:** Report on why I made the choices I did and some of the data behind those choices.
+ * **messages.js:** Central location of all error and console messages.
+ * **report.pdf:** Report on why I made the choices I did and some of the data behind those choices.
  * **simple_example.js:** A two function file with 2 calls that can be minified, same example as in report.
  * **simple_example.min.js:** The simple example unsafely minified.
  * **simple_example.full.min.js:** The simple example unsafely minified and then safely minified.
