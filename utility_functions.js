@@ -3,6 +3,8 @@
  **/
 var _ = require('lodash');
 
+var messages = require('./messages.js');
+
 module.exports = (function(){
     var _this = this;
 
@@ -71,7 +73,6 @@ module.exports = (function(){
     // Since JSON files are inserted into multiple times they must be reread by treating the file as an array of arrays object. Each array had a
     // comma inserted after itself. So the last comma must be eliminated then the code wrapped in an object to parse. Finally, the arrays are merged
     // into a singular object, this is what is returned.
-    this.fileErrorMessage = 'The file could not be parsed:\n';
     this.getJSONFile = function(file){
         if (_this.nullOrUndefined(file)) return null;
 
@@ -80,7 +81,7 @@ module.exports = (function(){
         try {
             var arrays = JSON.parse('[' + file + ']');
         } catch (e) {
-            throw(_this.fileErrorMessage + file);
+            messages.utility.fileNoParse(file).error();
         }
         
         // merge the arrays

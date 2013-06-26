@@ -1,5 +1,3 @@
-var u = require('./utility_functions.js');
-
 // Contains all messages for the application, including errors, each message object has an option to disable itself
 var messages = {
     error: function(err){
@@ -25,7 +23,7 @@ var messages = {
 
     // Adds a form set to messages.form and print set to true
     create: function(obj){
-        if (!u.nullOrUndefined(obj)){
+        if (typeof obj !== 'undefined' && obj !== null){
             obj.form = messages.form;
             obj.print = true;
         }
@@ -83,8 +81,18 @@ messages.generation = messages.create({
 
     filesNotSpecified: function(){
         return this.form('Error: files must be specified in main.js.');
+    },
+
+    noValidMergesCombinedData: function(){
+        return this.form('Error: The validMerges or combinedData file was null or undefined');
     }
 });
+
+messages.utility = messages.create({
+    fileNoParse: function(file){
+        return this.form('The file could not be parsed:\n' + file);
+    }
+})
 
 module.exports = function(){
     return messages;

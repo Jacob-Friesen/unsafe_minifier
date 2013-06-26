@@ -12,7 +12,7 @@ module.exports = function MergeFunctions(files, AST){
     if (u.nullOrUndefined(files) || u.nullOrUndefined(AST) || u.nullOrUndefined(AST.body))
         messages.merging.noFilesAST().error();
         
-    var context = this;
+    var _this = this;
     this.mergeFunction = new MergeFunction();
     this.functionStatistics = new FunctionStatistics();
     this.files = files;
@@ -60,7 +60,7 @@ module.exports = function MergeFunctions(files, AST){
         this.findFunctionCalls(AST.body, functionNames);
             
         // Find which functions can be combined
-        this.functionCalls = context.trimFunctionCalls();
+        this.functionCalls = _this.trimFunctionCalls();
         this.combineFunctions(network);
 
         if (_.isFunction(callback)) callback(AST);
@@ -70,22 +70,22 @@ module.exports = function MergeFunctions(files, AST){
     // ISSUES:
     // 1. Cannot handle auto invoking function expression name retrievals => Portfolio.selector = (function(_document)
     // 2. Cannot handle function assignments: var a = function b()
-    // 3. Assumes function names are unique, so no context checks
+    // 3. Assumes function names are unique, so no _this checks
     this.findFunctionDeclarations = function(AST_data, possibleName, parent, nameInParent){
         parent = parent || AST_data;
         
         _.each(AST_data, function(item, index){
             if (item !== null) {
-                possibleName = context.findFunctionExpressionName(item, possibleName);
+                possibleName = _this.findFunctionExpressionName(item, possibleName);
                 
                 // Matching function expressions and calls
                 if (item.hasOwnProperty('type') && item.type === 'FunctionDeclaration' || item.type === 'FunctionExpression'){
-                    context.addFunctionDeclaration(item, possibleName, parent, nameInParent);
+                    _this.addFunctionDeclaration(item, possibleName, parent, nameInParent);
                     possibleName = null;
                 }
                 
-                if (context.toContinue(item))
-                    context.findFunctionDeclarations(item, possibleName, AST_data, index);
+                if (_this.toContinue(item))
+                    _this.findFunctionDeclarations(item, possibleName, AST_data, index);
             }
         });
 
@@ -134,7 +134,7 @@ module.exports = function MergeFunctions(files, AST){
         else
             messages.merging.noNameFunction(function_data).error();
             
-        context.functionDeclarations[name] = {
+        _this.functionDeclarations[name] = {
             data: function_data,
             parent: parent,
             nameInParent: nameInParent
@@ -159,23 +159,23 @@ module.exports = function MergeFunctions(files, AST){
                 }
                 
                 // Add all the found functions if they don't already exist
-                _.each(context.checkForCalls(item, parent), function(foundItem){
+                _.each(_this.checkForCalls(item, parent), function(foundItem){
                     // Try to find the name given that there is a callee
-                    var name = context.findCallExpressionName(foundItem.call);
+                    var name = _this.findCallExpressionName(foundItem.call);
                     
                     // Check for a duplicate entry before adding (See checkForCalls)
                     var duplicate = false;
-                    for (var i = 0; i < context.functionCalls.length && !duplicate; i++){
-                        if (u.getLineNumber(context.functionCalls[i].data.data) === u.getLineNumber(foundItem.data)
-                            && context.functionCalls[i].fullName === name)
+                    for (var i = 0; i < _this.functionCalls.length && !duplicate; i++){
+                        if (u.getLineNumber(_this.functionCalls[i].data.data) === u.getLineNumber(foundItem.data)
+                            && _this.functionCalls[i].fullName === name)
                             duplicate = true;
                     }
                     
                     // Add the item
                     if (!duplicate){
-                        context.functionCalls.push({
+                        _this.functionCalls.push({
                             fullName: name,
-                            simpleName: context.extractSimpleName(name),
+                            simpleName: _this.extractSimpleName(name),
                             data: _.clone(foundItem.call),
                             parent: parent,
                             nameInParent: nameInParent,
@@ -185,8 +185,8 @@ module.exports = function MergeFunctions(files, AST){
                     }
                 });
                 
-                if (context.toContinue(item))
-                    context.findFunctionCalls(item, functionNames, null, possibleName, AST_data, index);
+                if (_this.toContinue(item))
+                    _this.findFunctionCalls(item, functionNames, null, possibleName, AST_data, index);
             }
         });
             
@@ -222,7 +222,7 @@ module.exports = function MergeFunctions(files, AST){
     this.findCallExpressionName = function findName(callExpression, name){
         // Search through any object properties
         if (u.hasOwnPropertyChain(callExpression, 'object')){
-            name = context.searchObjectForNames(callExpression.object, name);
+            name = _this.searchObjectForNames(callExpression.object, name);
         }
         
         if (u.hasOwnPropertyChain(callExpression, 'callee', 'name')){
@@ -302,25 +302,25 @@ module.exports = function MergeFunctions(files, AST){
     // them to its checking function.
     this.combineFunctions = function(network){
         // Redorder function calls by start location, descending. Any calls within short range of each other are candidates for merging.
-        context.functionCalls.sort(function(callX, callY) {
+        _this.functionCalls.sort(function(callX, callY) {
             return u.getLineNumber(callY.data) - u.getLineNumber(callX.data);
         });
         
         var previous = null,
             merges = 0;
-        context.functionCalls.forEach(function(contents, index){
+        _this.functionCalls.forEach(function(contents, index){
             if (previous !== null){
 
                 var seperation = Math.abs(u.getLineNumber(contents.data) - u.getLineNumber(previous.data));
-                if (seperation <= context.MAX_SEPERATION && seperation >= context.MIN_SEPERATION && previous.simpleName !== contents.simpleName){
-                    var previousFunction = context.functionDeclarations[previous.simpleName],
-                        contentsFunction = context.functionDeclarations[contents.simpleName];
+                if (seperation <= _this.MAX_SEPERATION && seperation >= _this.MIN_SEPERATION && previous.simpleName !== contents.simpleName){
+                    var previousFunction = _this.functionDeclarations[previous.simpleName],
+                        contentsFunction = _this.functionDeclarations[contents.simpleName];
                     
-                    var statistics = context.functionStatistics.add(previous, contents, previousFunction, contentsFunction);
+                    var statistics = _this.functionStatistics.add(previous, contents, previousFunction, contentsFunction);
                     if (u.nullOrUndefined(network) || network.canMerge(statistics)){
                         messages.merging.merge(contents.simpleName, previous.simpleName).send();
                         
-                        context.mergeFunction.merge(previous, contents, previousFunction, contentsFunction);
+                        _this.mergeFunction.merge(previous, contents, previousFunction, contentsFunction);
 
                         merges += 1;
                     }
@@ -333,7 +333,7 @@ module.exports = function MergeFunctions(files, AST){
         });
         messages.merging.total(merges).send();
         
-        context.functionStatistics.print(context.files.mergeData);
+        _this.functionStatistics.print(_this.files.mergeData);
 
         return true;
     }

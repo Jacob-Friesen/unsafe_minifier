@@ -2,7 +2,8 @@ var chai = require('chai'),
     assert = chai.assert,
     expect = chai.expect;
 
-var u = require('../utility_functions');
+var u = require('../utility_functions'),
+    messages = new require('../messages')();
 module.exports = function(callback){ 
 
     describe('utility_functions', function() {
@@ -276,7 +277,7 @@ module.exports = function(callback){
             it('should return non JSON file contents', function(){
                 expect(function(){
                     u.getJSONFile('Hello World!')
-                }).to.throw(u.fileErrorMessage + 'Hello World!');
+                }).to.throw(messages.utility.fileNoParse());
             });
 
             it('should remove commas from the end of the sent in string', function(){

@@ -1,10 +1,10 @@
-var fs = require('fs');
-var esprima = require("esprima");
-var escodegen = require("escodegen");
-var _ = require('lodash');
+var fs = require('fs'),
+    esprima = require("esprima"),
+    escodegen = require("escodegen"),
+    _ = require('lodash');
 
-var mergeFunctions = require('../AST_modification/merge_functions');
-var u = require('../utility_functions.js');
+var mergeFunctions = require('../AST_modification/merge_functions'),
+    u = require('../utility_functions.js');
 
 var PRINT_MERGES = true;
 
@@ -16,7 +16,7 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
         messages.generation.filesNotSpecified().error();
     
     this.once_done = null;
-    var context = this;
+    var _this = this;
     
     // Generate the data and put it in the specified output file, sets this.AST to the new AST. Also, clears all files specified in files that are
     // specified to be cleared in main.
@@ -43,41 +43,45 @@ module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files
                 var merge = new mergeFunctions(new_files, esprima.parse(data, {loc: true, comment: true}));
                 merge.merge(file, function(AST){
                     
-                    context.writeToMergedFile(file, AST, function(){
+                    _this.writeToMergedFile(mergedDataDirectory, file, AST, function(){
                         merges += 1;
                         if (merges === filenames.length)
-                            context.mergeStatsWithValidation(callback);
+                            _this.mergeStatsWithValidation(new_files.mergeData, new_files.validMerges, new_files.combinedData, callback);
                     });
                 }, null, PRINT_MERGES);
             });
         });
     }
     
-    // Write the modified AST results
-    this.writeToMergedFile = function(name, data, callback){
-        fs.writeFile(mergedDataDirectory + '/' + name, escodegen.generate(data), function (err) {
+    // Write the modified AST results to the specific file in the directory
+    this.writeToMergedFile = function(directory, name, data, callback){
+        fs.writeFile(directory + '/' + name, escodegen.generate(data), function (err) {
             if (err) throw err;
             return callback();
         });
     };
     
     // Merges the functions stats with the validation data and writes to the specified combined file
-    this.mergeStatsWithValidation = function(callback){
-        if (!files.mergeData || !files.mergeData[0])
+    this.mergeStatsWithValidation = function(mergeData, validMerges, combinedData, callback){
+        if (u.nullOrUndefined(mergeData))
             return callback();
+        if (u.nullOrUndefined(validMerges) || u.nullOrUndefined(combinedData))
+            messages.generation.noValidMergesCombinedData().error();
 
-        fs.readFile(files.mergeData[0], 'utf8', function (err, functionData) {
+        fs.readFile(mergeData, 'utf8', function(err, functionData) {
             if (err) throw err;
             
-            fs.readFile(files.validMerges[0], 'utf8', function (err, validData) {
+            fs.readFile(validMerges, 'utf8', function(err, validData) {
                 validData = JSON.parse(validData);
                 functionData = u.getJSONFile(functionData);
                 
-                functionData.forEach(function(statistic){
-                    statistic.valid = validData[statistic.name];
-                });
+                if (functionData !== null){
+                    functionData.forEach(function(statistic){
+                        statistic.valid = validData[statistic.name];
+                    });
+                }
                 
-                fs.writeFile(files.combinedData[0], JSON.stringify(functionData), function (err) {
+                fs.writeFile(combinedData, JSON.stringify(functionData), function (err) {
                     if (err) throw err;
                     return callback();
                 });
