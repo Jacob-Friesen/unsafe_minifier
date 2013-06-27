@@ -4,28 +4,33 @@ var _ = require('lodash'),
     expect = chai.expect,
     sinon = require('sinon'),
     stub = sinon.stub,
-    fs = require('fs');
+    fs = require('fs'),
+    esprima = require('esprima');
 
 var helper = new require('../test_helpers.js')(),
-	messages = new require('../../messages.js')(),
-	Generator = require('../../data_generation/index.js');
+    messages = new require('../../messages.js')(),
+    MergeFunctions = require('../../AST_modification/merge_functions.js'),
+    Generator = require('../../data_generation/index.js');
 
 
 
 module.exports = function(callback){
     describe('Generator', function(){
+        var generator = null,
+            test = {};
+        beforeEach(function(){
+            generator = new Generator('/a/directory/', '/b/directory/', {});
+        });
 
         after(function(){
             callback();
         });
 
-    	var generator = null,
-            test = {};
-    	describe('#constructor()', function(){
+        describe('#constructor()', function(){
             it('should throw an error when the raw or merged directories sent in is null or undefined', function(){
                 helper.dualNullUndefinedTest(function(rawDataDirectory, mergedDataDirectory){
                     expect(function(){
-                    	generator = new Generator(rawDataDirectory, mergedDataDirectory);
+                        generator = new Generator(rawDataDirectory, mergedDataDirectory);
                     }).to.throw(messages.generation.rawMergedDirectories());
                 });
             });
@@ -33,7 +38,7 @@ module.exports = function(callback){
              it('should throw an error when files is null or undefined', function(){
                 helper.nullUndefinedTest(function(files){
                     expect(function(){
-                    	generator = new Generator('/a/directory/', '/b/directory/', files);
+                        generator = new Generator('/a/directory/', '/b/directory/', files);
                     }).to.throw(messages.generation.filesNotSpecified());
                 });
             });
@@ -178,6 +183,239 @@ module.exports = function(callback){
                 });
 
                 writeFile.restore();
+            });
+        });
+
+        describe('#GetFileList()', function(){
+            it('should return an empty array if the directory is null or undefined', function(){
+                helper.nullUndefinedTest(function(){
+                    assert.deepEqual(generator.getFileList(), []);
+                });
+            });
+
+            it('should read the file directory in sync and then reject all temporary files', function(){
+                var readDirSync = stub(fs, 'readdirSync');
+                readDirSync.returns([
+                    'file1.json',
+                    'file1.json~',
+                    'file2.json'
+                ]);
+
+                assert.deepEqual(generator.getFileList('a/directory/'), [
+                    'file1.json',
+                    'file2.json'
+                ]);
+
+                assert.isTrue(readDirSync.calledOnce);
+                assert.isTrue(readDirSync.calledWith('a/directory/'));
+
+                readDirSync.restore();
+            });
+        });
+
+        describe('#clearFileData()', function(){
+            it('should return an empty object when null or undefined is sent', function(){
+                helper.nullUndefinedTest(function(files){
+                    assert.deepEqual(generator.clearFileData(files), {}); 
+                });
+            });
+
+            it('should return an empty object when files is an array', function(){
+                assert.deepEqual(generator.clearFileData(['test1.json', 'test2.json']), {});
+            });
+
+            it('should return an empty object when files items are not arrays', function(){
+                assert.deepEqual(generator.clearFileData({
+                    file1: 'data/file1.json',
+                    file2: 'data/file2.json',
+                }), {});
+            });
+
+            it('should return an object containing the same property names but the property is set to a string instead of an array', function(){
+                assert.deepEqual(generator.clearFileData({
+                    file1: ['data/file1.json', false],
+                    file2: ['data/file2.json', false]
+                }), {
+                    file1: 'data/file1.json',
+                    file2: 'data/file2.json',
+                });
+            });
+
+            it('should write empty data to a file for each specified true file', function(){
+                var writeFileSync = stub(fs, 'writeFileSync');
+
+                generator.clearFileData({
+                    file1: ['data/file1.json', true],
+                    file2: ['data/file2.json', false],
+                    file3: ['data/file3.json', true]
+                });
+
+                //assert.isTrue(writeFile.calledTwice);
+                assert.isTrue(writeFileSync.calledTwice);
+                assert.equal(writeFileSync.args[0][0], 'data/file1.json');
+                assert.equal(writeFileSync.args[0][1], '');
+                assert.equal(writeFileSync.args[1][0], 'data/file3.json');
+                assert.equal(writeFileSync.args[1][1], '');
+
+                writeFileSync.restore();
+            });
+        });
+
+        describe('#generateData()', function(){
+            function doCommonStubs(){
+                test.clearFileData = stub(generator, 'clearFileData');
+                test.getFileList = stub(generator, 'getFileList');
+                test.readFile = stub(fs, 'readFile');
+                test.parse = stub(esprima, 'parse');
+                test.MergeFunctions = stub(generator, 'MergeFunctions');
+                test.writeToMergedFile = stub(generator, 'writeToMergedFile');
+            };
+
+            // returns object containing files, parseReturn and filenames
+            function prepareForUnderMergeTests(){
+                var o = {
+                    files: {file1: 'file1.json'},
+                    parseReturn: {body: {}},
+                    filenames: ['test1.json', 'test2.json', 'test3.json']
+                }
+
+                test.clearFileData.returns(o.files);
+                test.readFile.callsArg(2);
+                test.parse.returns(o.parseReturn);
+
+                test.MergeFunctions.returns({merge: function(){}});
+
+                // merge.merge part
+                var createdMerge = new MergeFunctions(o.files, o.parseReturn);
+                test.merge = stub(createdMerge, 'merge');
+                test.MergeFunctions.returns(createdMerge);
+
+                return o;
+            }
+
+            afterEach(function(){
+                test.clearFileData.restore();
+                test.getFileList.restore();
+                test.readFile.restore();
+                test.parse.restore();
+                test.MergeFunctions.restore();
+                test.writeToMergedFile.restore();
+            });
+
+            it('should call clearFileData with the given files object to generator', function(){
+                generator = new Generator('/a/directory/', '/b/directory/', {file: 'file1.json'});
+                
+                doCommonStubs();
+                test.getFileList.returns([]);
+
+                generator.generateData();
+                assert.isTrue(test.clearFileData.calledOnce);
+                assert.isTrue(test.clearFileData.calledWith({file: 'file1.json'}));
+            });
+
+            it('should call clearFileData when filenames are null or undefined', function(){
+                generator = new Generator('/a/directory/', '/b/directory/', {});
+                
+                doCommonStubs();
+                test.getFileList.returns([]);
+
+                helper.nullUndefinedTest(function(filenames){
+                    generator.generateData(filenames);
+                    assert.isTrue(test.getFileList.calledOnce);
+                    assert.isTrue(test.getFileList.calledWith('/a/directory/'));
+
+                    test.getFileList.callCount -= 1;
+                })
+
+            });
+
+            it('should not call clearFileData with the filenames are specified', function(){
+                doCommonStubs();
+
+                generator.generateData(['test1.json']);
+                assert.isFalse(test.getFileList.called);
+            });
+
+            it('should call each file of filesnames with the rawdirectory in front using utf8', function(){
+                generator = new Generator('/a/directory', '/b/directory/', {});
+                doCommonStubs();
+
+                var filenames = ['test1.json', 'test2.json', 'test3.json'];
+
+                generator.generateData(filenames);
+
+                assert.equal(test.readFile.callCount, filenames.length);
+                filenames.forEach(function(file, index){
+                    assert.equal(test.readFile.args[index][0], '/a/directory' + '/' + filenames[index]);
+                    assert.equal(test.readFile.args[index][1], 'utf8');
+                });
+            });
+
+            it('should construct mergeFunctions with the correct arguments for each file', function(){
+                doCommonStubs();
+                var o = prepareForUnderMergeTests();
+
+                generator.generateData(o.filenames);
+
+                assert.equal(test.MergeFunctions.callCount, o.filenames.length);
+                o.filenames.forEach(function(file, index){
+                    assert.equal(test.MergeFunctions.args[index][0], o.files);
+                    assert.equal(test.MergeFunctions.args[index][1], o.parseReturn);
+                });
+            });
+
+            it('should construct mergeFunctions.merge with the correct arguments for each file', function(){
+                doCommonStubs();
+                var o = prepareForUnderMergeTests();
+
+                generator.generateData(o.filenames);
+
+                assert.equal(test.merge.callCount, o.filenames.length);
+                o.filenames.forEach(function(file, index){
+                    assert.equal(test.merge.args[index][0], o.filenames[index]);
+                    assert.isTrue(_.isFunction(test.merge.args[index][1]));
+                    assert.equal(test.merge.args[index][2], null);
+                });
+            });
+
+            it('should write to merged File with mergedDataDirectory, file and AST', function(){
+                generator = new Generator('/a/directory', '/b/directory/', {});
+                doCommonStubs();
+                var o = prepareForUnderMergeTests();
+                test.merge.callsArgWith(1, o.parseReturn);
+
+                generator.generateData(o.filenames);
+
+                assert.equal(test.writeToMergedFile.callCount, o.filenames.length);
+                o.filenames.forEach(function(file, index){
+                    assert.equal(test.writeToMergedFile.args[index][0], '/b/directory/');
+                    assert.equal(test.writeToMergedFile.args[index][1], o.filenames[index]);
+                    assert.equal(test.writeToMergedFile.args[index][2], o.parseReturn);
+                });
+            });
+
+            it('should send to mergeStatsWithValidation only once with mergedDataDirectory, file, AST and the given callback', function(){
+                doCommonStubs();
+                var o = prepareForUnderMergeTests();
+                test.merge.callsArgWith(1, o.parseReturn);
+                test.writeToMergedFile.callsArg(3);
+
+                var files = {
+                    mergeData: 'test1.json',
+                    validMerges: 'test2.json',
+                    combinedData: 'test3.json'
+                }
+                test.clearFileData.returns(files);
+
+                var mergeStatsWithValidation = stub(generator, 'mergeStatsWithValidation');
+
+                var callback = function(){return true};
+                generator.generateData(o.filenames, callback);
+
+                assert.isTrue(mergeStatsWithValidation.calledOnce);
+                assert.isTrue(mergeStatsWithValidation.calledWith(files.mergeData, files.validMerges, files.combinedData, callback));
+
+                mergeStatsWithValidation.restore();
             });
         });
 

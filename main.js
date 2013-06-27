@@ -25,7 +25,7 @@ var generateTestData = function(callback){
     console.log('\ngenerating data...');
     
     var generator = new DataGeneration(LOCS.rawDataDirectory, LOCS.mergedDataDirectory, LOCS.files);
-    generator.generateData(function(){
+    generator.generateData(null, function(){
         console.log('done generating data.\n');
         callback();
     });

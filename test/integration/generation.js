@@ -11,7 +11,7 @@ var main = require('fs');
 
 var tests = 'data/raw_data',
     verification = 'data/merged_data',
-    DataGeneration = require('../../data_generation');
+    Generator = require('../../data_generation');
 
 var COMMENT_MARK = 'test:';// Where verification comments are, stripped out of verification cases
 
@@ -34,8 +34,9 @@ module.exports = function(){
                 filenames = _.reject(filenames, function(name){ return name.search('test') < 0});
 
             // Write the generated data
-            var generator = new DataGeneration(tests, verification, {});
-            generator.generateData(function(){
+            var generator = new Generator(tests, verification, {});
+
+            generator.generateData(filenames, function(){
                 // Get all the comments in the unmmerged file
                 comments = new CommentsList();
                 comments.find(filenames, function(){
@@ -47,7 +48,7 @@ module.exports = function(){
                         callback();
                     });
                 });
-            }, filenames);
+            });
         }
 
         // Verify all expected comments appear in the verification files
