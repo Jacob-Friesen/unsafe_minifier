@@ -1,26 +1,29 @@
-var fs = require('fs');
-var util = require('util');
-var fann = require('node_fann');
-var _ = require('lodash');
+var fs = require('fs'),
+    util = require('util'),
+    fann = require('node_fann'),
+    _ = require('lodash');
 
-var u = require('../utility_functions.js');
-var NueralNetwork = require('./nueral_network.js');
+var u = require('../utility_functions.js'),
+    NueralNetwork = require('./nueral_network.js');
 
-var PARTITION = 0.7;// Training portion out of 1
-var ERROR_RATE = 0.1;// For each network
-var HIDDEN_SIZE = 4;// Multiple of input size
+var PARTITION = 0.7,// Training portion out of 1
+    ERROR_RATE = 0.1;// For each network
 
-var PRINT_DATA_STATS = true;// Print statistics of initial data before partitioning and equalizing yes/nos
-var PRINT_FANN_OUTPUT = false;// Whether FANN based output will appear
-var PRINT_NETWORK_STATS = false;// Print statistics of individual networks
-var PRINT_AVERAGE_STATS = true;// Print statistics across all network creations
-var SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5
-var NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number
+var PRINT_DATA_STATS = true,// Print statistics of initial data before partitioning and equalizing yes/nos
+    PRINT_FANN_OUTPUT = false,// Whether FANN based output will appear
+    PRINT_NETWORK_STATS = false,// Print statistics of individual networks
+    PRINT_AVERAGE_STATS = true,// Print statistics across all network creations
+    SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5
 
 // Handles training the networks and saving them.
-module.exports = function train(files){
+module.exports = function Train(files){
     if (u.nullOrUndefined(files))
         throw('Error: files must be specified in main.js.');
+
+    this.HIDDEN_SIZE = 4;// Multiple of input size
+
+    this.NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number
+
     var _this = this;
     
     this.train = function(callback){
@@ -52,13 +55,13 @@ module.exports = function train(files){
                 // Run the network, displaying the average success rate after calling the callback if it has ran enough times.
                 return _this.runNetwork(dataPartitions.training, dataPartitions.test, SAVE_NETWORKS, time, function(success, positives, negatives){
                     totalSuccess = [totalSuccess[0] + success, totalSuccess[1] + positives, totalSuccess[2] + negatives];
-                    if (time < NETWORKS - 1)
+                    if (time < _this.NETWORKS - 1)
                         return run(time + 1);
                     else{
                         if (PRINT_AVERAGE_STATS){
-                            console.log('\n' + NETWORKS + ' Accuracy: ' + totalSuccess[0]/NETWORKS);
-                            console.log('Precision: ' + totalSuccess[1]/NETWORKS);
-                            console.log('Negatives Rate: ' + totalSuccess[2]/NETWORKS);
+                            console.log('\n' + _this.NETWORKS + ' Accuracy: ' + totalSuccess[0]/_this.NETWORKS);
+                            console.log('Precision: ' + totalSuccess[1]/_this.NETWORKS);
+                            console.log('Negatives Rate: ' + totalSuccess[2]/_this.NETWORKS);
                         }
                         console.log();
                         return callback();
@@ -118,7 +121,6 @@ module.exports = function train(files){
             data.remove(point);//prevent duplicates
         }
         
-        //console.log('evenized\n',newData);
         return newData;
     };
     
@@ -142,7 +144,7 @@ module.exports = function train(files){
     // ]
     // Gives the callback the object containing the successRate and network.
     this.runNetwork = function(trainingData, testingData, toSave, index, callback){
-        var nueralNetwork = new NueralNetwork(trainingData[0][0].length, trainingData[0][0].length * HIDDEN_SIZE, trainingData[0][1].length);
+        var nueralNetwork = new NueralNetwork(trainingData[0][0].length, trainingData[0][0].length * _this.HIDDEN_SIZE, trainingData[0][1].length);
         nueralNetwork.train(trainingData, ERROR_RATE, PRINT_FANN_OUTPUT);
         var success = nueralNetwork.test(testingData, PRINT_NETWORK_STATS);
         

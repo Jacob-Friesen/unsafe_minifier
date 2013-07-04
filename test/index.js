@@ -28,7 +28,8 @@ else
 function integrationTests(){
 	if (_.contains(process.argv, '---i')){
 		[
-			'./integration/generation'
+			'./integration/generation',
+			'./integration/training'
 		].forEach(function(file){
 			require(file)();
 		});
