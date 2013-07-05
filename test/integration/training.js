@@ -14,12 +14,12 @@ var tests = 'data/raw_data',
 
 var FILES = {
     statistics: 'data/training_integration/statistics.json',
-    nueral: 'data/nueral_networks/trainedx.json',
+    neural: 'data/neural_networks/trainedx.json',
     networkNumber: 5
 }
 var sendFiles = {
     combinedData: ['data/function_data/combined.json', true],
-    nueralNetwork: ['data/nueral_networks/trained.json', true]
+    neuralNetwork: ['data/neural_networks/trained.json', true]
 }
 
 // REMEMBER TO MAKE .and pattern NPM module
@@ -30,7 +30,7 @@ module.exports = function(){
             createTestData(function(train){
                 test.train = train;
 
-                getNueralNetworkData(function(networkData){
+                getNeuralNetworkData(function(networkData){
                     test.networkData = networkData;
 
                     done();
@@ -78,17 +78,17 @@ module.exports = function(){
             });
         }
 
-        // Retrieves the created Nueral Networks data and passes a JS object it as the first argument to the sent callback
-        function getNueralNetworkData(callback, index, networkData){
+        // Retrieves the created neural Networks data and passes a JS object it as the first argument to the sent callback
+        function getNeuralNetworkData(callback, index, networkData){
             index = index || 0;
             networkData = networkData || [];
 
             if (index > 0){
-                fs.readFile(FILES.nueral.replace('x', (index - 1) + ''), 'utf-8', function(err, data){
+                fs.readFile(FILES.neural.replace('x', (index - 1) + ''), 'utf-8', function(err, data){
                     if (err) throw(err);
 
                     networkData.push(JSON.parse(data));
-                    getNueralNetworkData(callback, index - 1, networkData)
+                    getNeuralNetworkData(callback, index - 1, networkData)
                 });
             }
             else

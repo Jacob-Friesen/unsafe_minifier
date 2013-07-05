@@ -88,6 +88,12 @@ messages.generation = messages.create({
     }
 });
 
+messages.training = messages.create({
+    layerSizesNotSpecified: function(){
+        return this.form('Error: The number of input, hidden and output nodes must be specified.');
+    }
+});
+
 messages.utility = messages.create({
     fileNoParse: function(file){
         return this.form('The file could not be parsed:\n' + file);

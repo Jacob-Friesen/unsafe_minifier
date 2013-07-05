@@ -40,6 +40,16 @@ module.exports = function(){
         })()(null)(null, null)({}.undefined, null);
     }
 
+    // Same as last but for three arguments
+    this.tripleNullUndefinedTest = function(testCallback){
+        return (function testIt(arg1, arg2, arg3){
+            testCallback(arg1, arg2, arg3);
+
+            return testIt;
+        })()({}.undefined, {}.undefined, null)({}.undefined, null, {}.undefined)({}.undefined, null, null)
+        (null, {}.undefined, {}.undefined)(null, {}.undefined, null)(null, null, {}.undefined)(null, null, null);
+    }
+
     // Checks if all the properties of the given objects are present in each other
     this.sameStructureTest = function test(obj1, obj2){
         for(property in obj1)

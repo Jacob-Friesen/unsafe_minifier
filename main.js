@@ -17,7 +17,7 @@ var LOCS = {
         mergeData: ['data/function_data/merge_data.json', true],// second part is clear on test data generate
         validMerges: ['data/function_data/valid_merges.json', false],// second part is clear on test data generate
         combinedData: ['data/function_data/combined.json', true],
-        nueralNetwork: ['data/nueral_networks/trained.json', true]
+        neuralNetwork: ['data/neural_networks/trained.json', true]
     }
 };
 

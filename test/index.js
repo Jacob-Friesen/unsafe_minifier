@@ -11,7 +11,8 @@ if (_.contains(process.argv, '---u')){
 	    './AST_modification/merge_function_test',
 	    './AST_modification/merge_functions_test',
 	    './data_generation/function_statistics_test',
-	    './data_generation/index_test'
+	    './data_generation/index_test',
+	    './training/neural_network_test'
 	]
 
 	units.forEach(function(file){

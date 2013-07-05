@@ -1,14 +1,15 @@
-var fs = require('fs');
-var util = require('util');
-var fann = require('node_fann');
-var _ = require('lodash');
+var _ = require('lodash'),
+    fs = require('fs'),
+    util = require('util'),
+    fann = require('node_fann');
 
-var u = require('../utility_functions.js');
+var u = require('../utility_functions.js'),
+    messages = new require('../messages.js')();
 
 // Manages operations on a nueral network. Constructor takes the layer of networks and constructs a standard fully connected back-propogated network.
-module.exports = function nueralNetwork(inputNum, hiddenNum, outputNum){
+module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
     if (u.nullOrUndefined(inputNum) || u.nullOrUndefined(hiddenNum) || u.nullOrUndefined(outputNum))
-        throw('Error: The number of inputs, hidden and output nodes must be specified.');
+        messages.training.layerSizesNotSpecified().error();
     
     var _this = this;
     this.network = new fann.standard(inputNum, hiddenNum, outputNum);

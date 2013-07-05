@@ -4,7 +4,7 @@ var fs = require('fs'),
     _ = require('lodash');
 
 var u = require('../utility_functions.js'),
-    NueralNetwork = require('./nueral_network.js');
+    NeuralNetwork = require('./neural_network.js');
 
 var PARTITION = 0.7,// Training portion out of 1
     ERROR_RATE = 0.1;// For each network
@@ -144,15 +144,15 @@ module.exports = function Train(files){
     // ]
     // Gives the callback the object containing the successRate and network.
     this.runNetwork = function(trainingData, testingData, toSave, index, callback){
-        var nueralNetwork = new NueralNetwork(trainingData[0][0].length, trainingData[0][0].length * _this.HIDDEN_SIZE, trainingData[0][1].length);
-        nueralNetwork.train(trainingData, ERROR_RATE, PRINT_FANN_OUTPUT);
-        var success = nueralNetwork.test(testingData, PRINT_NETWORK_STATS);
+        var neuralNetwork = new NeuralNetwork(trainingData[0][0].length, trainingData[0][0].length * _this.HIDDEN_SIZE, trainingData[0][1].length);
+        neuralNetwork.train(trainingData, ERROR_RATE, PRINT_FANN_OUTPUT);
+        var success = neuralNetwork.test(testingData, PRINT_NETWORK_STATS);
         
         if (toSave)
-            return nueralNetwork.save(files.nueralNetwork[0].replace('.json',index + '.json'), function(){
-                return callback(success[0], success[1], success[2], nueralNetwork.network);
+            return neuralNetwork.save(files.neuralNetwork[0].replace('.json',index + '.json'), function(){
+                return callback(success[0], success[1], success[2], neuralNetwork.network);
             });
-        return callback(success[0], success[1], success[2], nueralNetwork.network);
+        return callback(success[0], success[1], success[2], neuralNetwork.network);
     };
     
     return this;
