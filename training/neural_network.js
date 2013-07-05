@@ -58,16 +58,22 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
     // Saves the network to the specified file and calls the callback.
     // Note: network.save(file) does work but the node bindings library has no load network support.
     this.save = function(file, callback){
-        var toPrint = {
-            layerSizes: _this.network.layers,
-            weights: _this.network.get_weight_array()
+        if (!_.isString(file) || file.length < 1)
+            messages.training.noSaveFile(file).error();
+
+        var toPrint = {};
+        if (!u.nullOrUndefined(_this.network.layers) && _.isFunction(_this.network.get_weight_array)){
+            toPrint = {
+                layerSizes: _this.network.layers,
+                weights: _this.network.get_weight_array()
+            }
         }
         
         fs.writeFile(file, JSON.stringify(toPrint), function (err) {
             if (err) throw err;
             
-            console.log('The network has been saved to ' + file);
-            return callback();
+            messages.training.saveNetwork(file).send();
+            if (callback) callback();
         });
     };
     

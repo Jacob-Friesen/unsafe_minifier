@@ -91,6 +91,14 @@ messages.generation = messages.create({
 messages.training = messages.create({
     layerSizesNotSpecified: function(){
         return this.form('Error: The number of input, hidden and output nodes must be specified.');
+    },
+
+    noSaveFile: function(file){
+        return this.form('The file to save a neural network to must be saved: ' + file);
+    },
+
+    saveNetwork: function(file){
+        return this.form('The network has been saved to ' + file);
     }
 });
 

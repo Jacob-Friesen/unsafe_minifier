@@ -1,3 +1,5 @@
+var _ = require('lodash');
+
 var test = {};
 (function resetTestData(){
     test = {};
@@ -257,7 +259,7 @@ var test = {};
         loc: test.loc1
     }
 
-    test.assignmentExpressionNestedObject = Object.nu(test.assignmentExpression);
+    test.assignmentExpressionNestedObject = _.cloneDeep(test.assignmentExpression);
     test.assignmentExpressionNestedObject.left = { 
         type: 'MemberExpression',
         computed: false,

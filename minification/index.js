@@ -9,7 +9,7 @@ var exec = require('child_process').exec;
 var u = require('../utility_functions.js');
 var mergeFunctions = require('../AST_modification/merge_functions');
 var Training = require('../training');
-var NueralNetwork = require('../training/nueral_network.js');
+var NeuralNetwork = require('../training/neural_network.js');
 
 var PRINT_MERGES = true;// Print functions merged
 var NETWORKS = 5;// Number of networks to use when deciding
@@ -45,8 +45,8 @@ module.exports = function Minification(files){
     this.minifyFile = function(file, callback){
         console.log('\nminifying file...');
         
-        this.loadNetworks(function(nueralNetworks){
-            mergeDecider.networks = nueralNetworks;
+        this.loadNetworks(function(neuralNetworks){
+            mergeDecider.networks = neuralNetworks;
             
             return fs.readFile(file, 'utf8', function (err, data) {
                 if (err) throw err;
@@ -88,14 +88,14 @@ module.exports = function Minification(files){
     this.loadNetworks = function(callback){
         (function read(toRead, networks){
             
-            var file = files.nueralNetwork[0].replace('.json',toRead + '.json');
+            var file = files.neuralNetwork[0].replace('.json',toRead + '.json');
             return fs.readFile(file, 'utf8', function (err, data) {
                 if (err) throw err;
                 
                 data = JSON.parse(data);
-                var nueralNetwork = new NueralNetwork(data.layerSizes[0], data.layerSizes[1], data.layerSizes[2]);
-                nueralNetwork.network.set_weight_array(data.weights);
-                networks.push(nueralNetwork);
+                var neuralNetwork = new NeuralNetwork(data.layerSizes[0], data.layerSizes[1], data.layerSizes[2]);
+                neuralNetwork.network.set_weight_array(data.weights);
+                networks.push(neuralNetwork);
                 
                 console.log('loaded network from ' + file);
                 if (toRead > 0)
