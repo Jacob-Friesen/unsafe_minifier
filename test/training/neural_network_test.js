@@ -22,6 +22,11 @@ module.exports = function(callback){
             callback();
         });
 
+        function setNetwork(network){
+            test.standard.returns(network);
+            test.neuralNetwork = new NeuralNetwork(10, 40, 1);
+        }
+
         describe('#constructor()', function(){
             it('should throw an error if the input, hidden or output layer sizes are null or undefined', function(){
                 helper.tripleNullUndefinedTest(function(inputNum, hiddenNum, outputNum){
@@ -122,12 +127,11 @@ module.exports = function(callback){
 
         describe('#getResultOf()', function(){
             function setThreshold(threshold){
-                test.standard.returns({
+                setNetwork({
                     run: function(data){
                         return threshold;
                     }
                 });
-                test.neuralNetwork = new NeuralNetwork(10, 40, 1);
             }
 
 	    beforeEach(function(){
@@ -151,6 +155,111 @@ module.exports = function(callback){
                 assert.equal(test.neuralNetwork.getResultOf({}), 1);
             });
     	});
+
+        describe('#test()', function(){
+	    beforeEach(function(){
+                test.log = stub(console, 'log');
+                test.standard = stub(fann, 'standard');
+
+                setNetwork({});
+                test.getResultOf = stub(test.neuralNetwork, 'getResultOf');
+            });
+
+            afterEach(function(){
+                test.log.restore();
+                test.standard.restore();
+                test.getResultOf.restore();
+            });
+
+            it('should return and print NaN for the success, negative and positives rate when data is null or undefined', function(){
+                helper.nullUndefinedTest(function(data){
+                    test.neuralNetwork.test(data).forEach(function(rate){
+                        assert.isTrue(_.isNaN(rate));
+                    });
+
+                    assert.isTrue(test.log.calledOnce);
+                    assert.isTrue(test.log.calledWith(messages.training.testStats(NaN, NaN, NaN, [0,0], [0,0], 0) + ''));
+                    test.log.callCount -= 1;
+                });
+            });
+
+            it('should return and print 0 and a NaN for the success, negative and positives rate when the data has one point not validated',
+            function(){
+                // Expected is positive vs expected is negative
+                [0, 1].forEach(function(index){
+                    test.getResultOf.returns((index === 1) ? 0 : 1);
+
+                    var results = test.neuralNetwork.test([[ [null],index ]]);
+                    assert.equal(results[0], 0);
+                    if (index !== 0)
+                        assert.isTrue(_.isNaN(results[1]));
+                    else
+                        assert.equal(results[1], 0);
+                    if (index !== 1)
+                        assert.isTrue(_.isNaN(results[2]));
+                    else
+                        assert.equal(results[2], 0);
+                    
+                    assert.isTrue(test.log.calledOnce);
+                    test.log.callCount -= 1;
+
+                    var tries = [0,0];
+                    tries[index] += 1;
+                    assert.isTrue(test.log.calledWith(messages.training.testStats(0, 0, 0, [0,0], tries, 1) + ''));
+                });
+            });
+
+            // I could reduce repetition here but it would make give more conditionals making it harder to debug.
+            it('should return and print 1 for success and 1 for each positive/negative depending on case', function(){                
+                // Expected is positive vs expected is negative
+                [0, 1].forEach(function(index){
+                    test.getResultOf.returns(index);
+
+                    var results = test.neuralNetwork.test([[ [null],index ]]);
+                    assert.equal(results[0], 1);
+                    if (index !== 0)
+                        assert.isTrue(_.isNaN(results[1]));
+                    else
+                        assert.equal(results[1], 1);
+                    if (index !== 1)
+                        assert.isTrue(_.isNaN(results[2]));
+                    else
+                        assert.equal(results[2], 1);
+
+                    
+                    assert.isTrue(test.log.calledOnce);
+                    test.log.callCount -= 1;
+
+                    var tries = [0,0];
+                    tries[index] += 1;
+                    assert.isTrue(test.log.calledWith(messages.training.testStats(0, 0, 0, [0,0], tries, 1) + ''));
+                });
+            });
+
+            it('should return and print 1 for all rates when positive and negative rates are validated', function(){
+                test.getResultOf.withArgs([0]).returns(0);
+                test.getResultOf.withArgs([1]).returns(1);
+
+                assert.deepEqual(test.neuralNetwork.test([[ [0],0 ],
+                                                          [ [1],1 ]]), [1,1,1]);
+                    
+                assert.isTrue(test.log.calledOnce);
+                assert.isTrue(test.log.calledWith(messages.training.testStats(1, 1, 1, [1,1], [1,1], 2) + ''));
+            });
+
+            it('should return and print 0.66... for success when 2 out of 3 results in total pass and 1/2 for another', function(){
+                test.getResultOf.withArgs([0]).returns(0);
+                test.getResultOf.withArgs([1]).returns(1);
+                test.getResultOf.withArgs([2]).returns(0);
+
+                assert.deepEqual(test.neuralNetwork.test([[ [0],0 ],
+                                                          [ [1],1 ],
+                                                          [ [2],1 ]]), [2/3,1,1/2]);
+                    
+                assert.isTrue(test.log.calledOnce);
+                assert.isTrue(test.log.calledWith(messages.training.testStats(2/3, 1, 1/2, [1,1], [1,2], 3) + ''));
+            });
+        });
               
     });
 }

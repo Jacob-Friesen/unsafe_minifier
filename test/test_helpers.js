@@ -1,19 +1,19 @@
 var chai = require('chai'),
     assert = chai.assert;
 
-// Any of the tests return the function that calls the callback so they can be called again with more arguments sent in after the initial run through
+// Any of the tests return the function that calls the callback so they can be called again with more arguments sent in after the initial run through.
 module.exports = function(){
 	
-	// Tests all combinations in empty/null/undefined (enu) of a single variable
-	this.ENUTest = function(testCallback){
-		return (function testIt(arg){
-			testCallback(arg);
-			return testIt;
-		})()(null)({});
-	};
+    // Tests all combinations in empty/null/undefined (enu) of a single variable. Empty specifies an override to the empty value for {}.
+    this.ENUTest = function(testCallback, empty){
+        return (function testIt(arg){
+            testCallback(arg);
+	    return testIt;
+        })()(null)(empty);
+    };
 
-	// Tests all ENU combinations of the first and second argument using the sent in callback
-	this.dualENUTest = function(testCallback){
+    // Tests all ENU combinations of the first and second argument using the sent in callback.
+    this.dualENUTest = function(testCallback){
         return (function testIt(arg1, arg2){
             testCallback(arg1, arg2);
 
@@ -23,7 +23,7 @@ module.exports = function(){
         ({})({}, null)({}, {});
     }
 
-    // Tests all null and undefined combinations for a single argument
+    // Tests all null and undefined combinations for a single argument.
     this.nullUndefinedTest = function(testCallback){
         return (function testIt(arg){
             testCallback(arg);
@@ -31,8 +31,8 @@ module.exports = function(){
         })()(null);
     }
 
-    // Tests all null and undefined combinations of the first and second argument using the sent in callback
-   	this.dualNullUndefinedTest = function(testCallback){
+    // Tests all null and undefined combinations of the first and second argument using the sent in callback.
+    this.dualNullUndefinedTest = function(testCallback){
         return (function testIt(arg1, arg2){
             testCallback(arg1, arg2);
 
@@ -40,7 +40,7 @@ module.exports = function(){
         })()(null)(null, null)({}.undefined, null);
     }
 
-    // Same as last but for three arguments
+    // Same as last but for three arguments.
     this.tripleNullUndefinedTest = function(testCallback){
         return (function testIt(arg1, arg2, arg3){
             testCallback(arg1, arg2, arg3);
@@ -50,7 +50,7 @@ module.exports = function(){
         (null, {}.undefined, {}.undefined)(null, {}.undefined, null)(null, null, {}.undefined)(null, null, null);
     }
 
-    // Checks if all the properties of the given objects are present in each other
+    // Checks if all the properties of the given objects are present in each other.
     this.sameStructureTest = function test(obj1, obj2){
         for(property in obj1)
             assert.isDefined(obj2[property]);
@@ -59,6 +59,6 @@ module.exports = function(){
 
         return test;
     }
-
-	return this;
+    
+    return this;
 }

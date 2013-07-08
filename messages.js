@@ -97,6 +97,12 @@ messages.training = messages.create({
         return this.form('The file to save a neural network to must be saved: ' + file);
     },
 
+    testStats: function(successRate, positiveRate, negativeRate, success, tries, length){
+        return this.form("\nAccuracy: " + successRate + " (" + (success[0] + success[1]) + "/" + length + ")" +
+                         "\nPrecision: " + positiveRate + " (" + success[0] + "/" + tries[0] + ")" +
+                         "\nNegative Rate: " + negativeRate + " (" + success[1] + "/" + tries[1] + ")");
+    },
+
     saveNetwork: function(file){
         return this.form('The network has been saved to ' + file);
     }
