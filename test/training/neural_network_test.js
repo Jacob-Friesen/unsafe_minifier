@@ -119,5 +119,38 @@ module.exports = function(callback){
                 callbackSpy.restore();
             });
         });
+
+        describe('#getResultOf()', function(){
+            function setThreshold(threshold){
+                test.standard.returns({
+                    run: function(data){
+                        return threshold;
+                    }
+                });
+                test.neuralNetwork = new NeuralNetwork(10, 40, 1);
+            }
+
+	    beforeEach(function(){
+                test.standard = stub(fann, 'standard');
+            });
+
+            afterEach(function(){
+                test.standard.restore();
+            });
+
+            // No specific error checking (or testing) the default error for sending in data is sufficient
+            it('should return 0 when the network output is less than the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD - 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 0);
+            });
+
+            it('should return 1 when the network output is >= to the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD + 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
+            });
+    	});
+              
     });
 }

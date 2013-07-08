@@ -48,7 +48,7 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
         return [successRate, positiveRate, negativeRate];
     };
     
-    // Returns 1 if positive and 0 if negative, according to threshold value
+    // Sends given inputs into the network, returns 1 if less than the threshold and 0 if not.
     this.getResultOf = function(data){
         if (_this.network.run(data) < _this.OUTPUT_THRESHOLD)
             return 0;
