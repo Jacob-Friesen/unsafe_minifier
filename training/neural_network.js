@@ -14,13 +14,21 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
     var _this = this;
     this.network = new fann.standard(inputNum, hiddenNum, outputNum);
     this.OUTPUT_THRESHOLD = 0.3;// Everything less than this will be negative.
+    this.EPOCHS = 10;
     
-    // Trains the network with the specified error rate 10 times or earlier if the error rate is reached. Prints FANN statistics if indicated.
+    // Trains the network with the specified error rate EPOCHS times or earlier if the error rate is reached. Prints FANN statistics if indicated. 
+    // Data follows this form:
+    // dataPoints -> [
+    //    point -> [
+    //        function statistics -> [1,2,3], 1 <- What the result should be
+    //    ]
+    // ]
+    // More information can be obtained from: http://leenissen.dk/fann/html/files/fann_train-h.html
     this.train = function(data, errorRate, printFann){
-        if (printFann) printFann = 1
-        else printFann = 0;
-        
-        _this.network.train(data, {error: errorRate, epochs: 10, epochs_between_reports: printFann});
+        if (u.enu(data) || !_.isNumber(errorRate))
+            messages.training.dataErrorRateNotSpecified().error();
+
+        _this.network.train(data, {error: errorRate, epochs: _this.EPOCHS, epochs_between_reports: (printFann) ? 1 : 0});
     };
     
     // See how many correct results are obtained using the data sent in, returns total, postive, and negative success rates. Prints the success rate
@@ -38,7 +46,7 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
             });
         }
 
-	var length = (u.hasOwnPropertyChain(data, 'length') ? data.length : 0),
+        var length = (u.hasOwnPropertyChain(data, 'length') ? data.length : 0),
             successRate = (success[0] + success[1])/length,
             positiveRate = success[0]/tries[0],
             negativeRate = success[1]/tries[1];

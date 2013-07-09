@@ -93,6 +93,10 @@ messages.training = messages.create({
         return this.form('Error: The number of input, hidden and output nodes must be specified.');
     },
 
+    dataErrorRateNotSpecified: function(){
+        return this.form('Error: The data must be a non empty object and the errorRate must be a number');
+    },
+
     noSaveFile: function(file){
         return this.form('The file to save a neural network to must be saved: ' + file);
     },

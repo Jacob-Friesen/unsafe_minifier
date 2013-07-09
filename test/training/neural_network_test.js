@@ -50,6 +50,38 @@ module.exports = function(callback){
             });
         });
 
+        describe('#getResultOf()', function(){
+            function setThreshold(threshold){
+                setNetwork({
+                    run: function(data){
+                        return threshold;
+                    }
+                });
+            }
+
+            beforeEach(function(){
+                test.standard = stub(fann, 'standard');
+                setNetwork({});
+            });
+
+            afterEach(function(){
+                test.standard.restore();
+            });
+
+            // No specific error checking (or testing) the default error for sending in data is sufficient
+            it('should return 0 when the network output is less than the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD - 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 0);
+            });
+
+            it('should return 1 when the network output is >= to the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD + 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
+            });
+        });
+
         describe('#save()', function(){
             beforeEach(function(){
                 test.standard = stub(fann, 'standard');
@@ -61,9 +93,7 @@ module.exports = function(callback){
                     get_weight_array: function(){ return [1, 2, 3]; }// contents don't matter in this case
                 }
 
-                test.standard.returns(test.network);
-
-                test.neuralNetwork = new NeuralNetwork(10, 40, 1);
+                setNetwork(test.network);
             });
 
             afterEach(function(){
@@ -80,10 +110,10 @@ module.exports = function(callback){
             });
 
             it('should print an empty object if the network layers or weight array can\'t be reached', function(){
-	        function networkReturns(returnThis){
+                function networkReturns(returnThis){
                     test.standard.returns(returnThis);
                     test.neuralNetwork = new NeuralNetwork(10, 40, 1);
-		}
+                }
 
                 (function save(){
                     test.neuralNetwork.save('test_file.json', test.callback);
@@ -112,7 +142,7 @@ module.exports = function(callback){
 
             it('should specify the file saved to and call the callback', function(){
                 test.writeFile.callsArg(2);
-		var callbackSpy = spy(test, 'callback'),
+                var callbackSpy = spy(test, 'callback'),
                     logStub = stub(console, 'log');
 
                 test.neuralNetwork.save('test_file.json', test.callback);
@@ -120,44 +150,13 @@ module.exports = function(callback){
                 assert.isTrue(logStub.calledOnce);
                 assert.isTrue(logStub.calledWith(messages.training.saveNetwork('test_file.json') + ''));
 
-		logStub.restore();
+                logStub.restore();
                 callbackSpy.restore();
             });
         });
 
-        describe('#getResultOf()', function(){
-            function setThreshold(threshold){
-                setNetwork({
-                    run: function(data){
-                        return threshold;
-                    }
-                });
-            }
-
-	    beforeEach(function(){
-                test.standard = stub(fann, 'standard');
-            });
-
-            afterEach(function(){
-                test.standard.restore();
-            });
-
-            // No specific error checking (or testing) the default error for sending in data is sufficient
-            it('should return 0 when the network output is less than the threshold', function(){
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD - 0.0001);
-                assert.equal(test.neuralNetwork.getResultOf({}), 0);
-            });
-
-            it('should return 1 when the network output is >= to the threshold', function(){
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD);
-                assert.equal(test.neuralNetwork.getResultOf({}), 1);
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD + 0.0001);
-                assert.equal(test.neuralNetwork.getResultOf({}), 1);
-            });
-    	});
-
         describe('#test()', function(){
-	    beforeEach(function(){
+            beforeEach(function(){
                 test.log = stub(console, 'log');
                 test.standard = stub(fann, 'standard');
 
@@ -260,6 +259,45 @@ module.exports = function(callback){
                 assert.isTrue(test.log.calledWith(messages.training.testStats(2/3, 1, 1/2, [1,1], [1,2], 3) + ''));
             });
         });
-              
+
+        describe('#train()', function(){
+            beforeEach(function(){
+                test.standard = stub(fann, 'standard');
+                test.train = stub();
+
+                setNetwork({
+                    train: test.train
+                });
+            });
+
+            afterEach(function(){
+                if (test.standard.restore)
+                    test.standard.restore();
+            });
+
+            it('should throw an error the data sent is enu or the errorRate is not a number', function(){
+                function testTrain(data, errorRate){
+                    expect(function(){
+                        test.neuralNetwork.train(data, errorRate);
+                    }).to.throw(messages.training.dataErrorRateNotSpecified());
+                    assert.isFalse(test.train.called);
+                }
+
+                helper.ENUTest(function(data){
+                    [null, '1', 1].forEach(function(errorRate){
+                        testTrain(data, errorRate);
+                    });
+                });
+                testTrain([[0],[1]], '1');
+            });
+
+            it('should send the data and error, epochs, and epochs between reports options', function(){
+                var data = [[[1,2,3],1]];// (single point, not that it matters)
+                test.neuralNetwork.train(data, 1, false);
+
+                assert.isTrue(test.train.calledOnce);
+                assert.isTrue(test.train.calledWith(data, {error: 1, epochs: test.neuralNetwork.EPOCHS, epochs_between_reports: 0}));
+            });
+        });
     });
 }
