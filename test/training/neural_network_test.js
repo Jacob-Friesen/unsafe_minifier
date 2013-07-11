@@ -18,6 +18,10 @@ module.exports = function(callback){
     describe('NeuralNetwork', function(){
 
         var test = {};
+        beforeEach(function(){
+            test = {};
+        });
+
         after(function(){
             callback();
         });

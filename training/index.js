@@ -6,23 +6,21 @@ var fs = require('fs'),
 var u = require('../utility_functions.js'),
     NeuralNetwork = require('./neural_network.js');
 
-var PARTITION = 0.7,// Training portion out of 1
-    ERROR_RATE = 0.1;// For each network
-
-var PRINT_DATA_STATS = true,// Print statistics of initial data before partitioning and equalizing yes/nos
-    PRINT_FANN_OUTPUT = false,// Whether FANN based output will appear
-    PRINT_NETWORK_STATS = false,// Print statistics of individual networks
-    PRINT_AVERAGE_STATS = true,// Print statistics across all network creations
-    SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5
-
 // Handles training the networks and saving them.
-module.exports = function Train(files){
+module.exports = function Trainer(files){
     if (u.nullOrUndefined(files))
-        throw('Error: files must be specified in main.js.');
+        messages.training.filesNotSpecified().error();
 
+    this.PARTITION = 0.7,// Training portion out of 1
+    this.ERROR_RATE = 0.1;// For each network
     this.HIDDEN_SIZE = 4;// Multiple of input size
-
     this.NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number
+    this.SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5
+
+    this.PRINT_DATA_STATS = true;// Print statistics of initial data before partitioning and equalizing yes/nos
+    this.PRINT_FANN_OUTPUT = false;// Whether FANN based output will appear
+    this.PRINT_NETWORK_STATS = false;// Print statistics of individual networks
+    this.PRINT_AVERAGE_STATS = true;// Print statistics across all network creations
 
     var _this = this;
     
@@ -35,7 +33,7 @@ module.exports = function Train(files){
             var combinedData = JSON.parse(data);
             
             // Look at data representation
-            if (PRINT_DATA_STATS){
+            if (_this.PRINT_DATA_STATS){
                 var yes = 0;
                 var no = 0;
                 combinedData.forEach(function(dataPoint){
@@ -53,12 +51,12 @@ module.exports = function Train(files){
                 var dataPartitions = _this.partitionData(organized);
                 
                 // Run the network, displaying the average success rate after calling the callback if it has ran enough times.
-                return _this.runNetwork(dataPartitions.training, dataPartitions.test, SAVE_NETWORKS, time, function(success, positives, negatives){
+                return _this.runNetwork(dataPartitions.training, dataPartitions.test, _this.SAVE_NETWORKS, time, function(success, positives, negatives){
                     totalSuccess = [totalSuccess[0] + success, totalSuccess[1] + positives, totalSuccess[2] + negatives];
                     if (time < _this.NETWORKS - 1)
                         return run(time + 1);
                     else{
-                        if (PRINT_AVERAGE_STATS){
+                        if (_this.PRINT_AVERAGE_STATS){
                             console.log('\n' + _this.NETWORKS + ' Accuracy: ' + totalSuccess[0]/_this.NETWORKS);
                             console.log('Precision: ' + totalSuccess[1]/_this.NETWORKS);
                             console.log('Negatives Rate: ' + totalSuccess[2]/_this.NETWORKS);
@@ -128,7 +126,7 @@ module.exports = function Train(files){
     this.partitionData = function(data){
         var training = [];
         
-        var portionNeeded = data.length * PARTITION;
+        var portionNeeded = data.length * _this.PARTITION;
         while (training.length < portionNeeded){
             point = u.randomInt(0, data.length - 1);
             training.push(data[point]);
@@ -145,8 +143,8 @@ module.exports = function Train(files){
     // Gives the callback the object containing the successRate and network.
     this.runNetwork = function(trainingData, testingData, toSave, index, callback){
         var neuralNetwork = new NeuralNetwork(trainingData[0][0].length, trainingData[0][0].length * _this.HIDDEN_SIZE, trainingData[0][1].length);
-        neuralNetwork.train(trainingData, ERROR_RATE, PRINT_FANN_OUTPUT);
-        var success = neuralNetwork.test(testingData, PRINT_NETWORK_STATS);
+        neuralNetwork.train(trainingData, _this.ERROR_RATE, _this.PRINT_FANN_OUTPUT);
+        var success = neuralNetwork.test(testingData, _this.PRINT_NETWORK_STATS);
         
         if (toSave)
             return neuralNetwork.save(files.neuralNetwork[0].replace('.json',index + '.json'), function(){

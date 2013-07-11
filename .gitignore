@@ -8,7 +8,7 @@ lib-cov
 *.gz
 *~
 
-data/nueral_networks/trained*
+data/neural_networks/trained*
 data/merged_data/*.js
 data/.
 

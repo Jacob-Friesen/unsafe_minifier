@@ -19,6 +19,7 @@ module.exports = function(callback){
         var generator = null,
             test = {};
         beforeEach(function(){
+            test = {};
             generator = new Generator('/a/directory/', '/b/directory/', {});
         });
 
