@@ -3,7 +3,7 @@ var _ = require('lodash');
 var u = require('../utility_functions.js'),
     messages = new require('../messages.js')(),
     MergeFunction = require('./merge_function.js'),
-    FunctionStatistics = require('../data_generation/function_statistics.js');
+    FunctionStatistics = require('../generation/function_statistics.js');
 
 // Handles function merging for the given AST. Finds most of the calls and functions in the code, keep in mined
 // JS is extremely expressive and this system is a prototype. Function declerations and calls that will not be

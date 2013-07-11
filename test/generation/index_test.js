@@ -10,9 +10,7 @@ var _ = require('lodash'),
 var helper = new require('../test_helpers.js')(),
     messages = new require('../../messages.js')(),
     MergeFunctions = require('../../AST_modification/merge_functions.js'),
-    Generator = require('../../data_generation/index.js');
-
-
+    Generator = require('../../generation/index.js');
 
 module.exports = function(callback){
     describe('Generator', function(){

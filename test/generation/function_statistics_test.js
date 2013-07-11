@@ -6,7 +6,7 @@ var _ = require('lodash'),
     stub = sinon.stub,
     fs = require('fs');
 
-var FunctionStatistics = require('../../data_generation/function_statistics.js'),
+var FunctionStatistics = require('../../generation/function_statistics.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     test = require('../test_data.js'),
     helper = new require('../test_helpers.js')(),

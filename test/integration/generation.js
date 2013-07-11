@@ -11,7 +11,7 @@ var main = require('fs');
 
 var tests = 'data/raw_data',
     verification = 'data/merged_data',
-    Generator = require('../../data_generation');
+    Generator = require('../../generation');
 
 var COMMENT_MARK = 'test:';// Where verification comments are, stripped out of verification cases
 

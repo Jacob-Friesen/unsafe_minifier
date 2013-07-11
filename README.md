@@ -41,7 +41,7 @@ Below is an explanation of the main files and directories in this directory. Det
 **Directories:**
  * **AST_modification:** Code to transform ASTs, mostly function merging. Includes statistics generation.
  * **data:** where raw, transformed, and statistical data is contained.
- * **data_generation:** Code used to create data for the project.
+ * **generation:** Code used to create data for that the training section trains on.
  * **minification:** Code used to minify a sent in file.
  * **node_modules:** Libraries that were used in my code are stored here.
  * **safe_minifier:** The YUI Compressor, yes it's in Java and no there seems to be no good well known non-Java minifiers.

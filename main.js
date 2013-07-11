@@ -6,7 +6,7 @@
 // -t/-train:    Train system on test data
 // -m/-minify:   Minify a file using the network trained
 
-var DataGeneration = require('./data_generation');
+var DataGeneration = require('./generation');
 var Training = require('./training');
 var Minification = require('./minification');
 
