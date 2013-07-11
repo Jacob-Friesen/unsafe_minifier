@@ -174,9 +174,17 @@ module.exports = function(callback){
                 test.getResultOf.restore();
             });
 
+            it('should just return and not print when printStats is falsey with null or undefined data', function(){
+                helper.nullUndefinedTest(function(data){
+                    test.neuralNetwork.test(data, true).forEach(function(rate){
+                        assert.isTrue(_.isNaN(rate));
+                    });
+                });
+            });
+
             it('should return and print NaN for the success, negative and positives rate when data is null or undefined', function(){
                 helper.nullUndefinedTest(function(data){
-                    test.neuralNetwork.test(data).forEach(function(rate){
+                    test.neuralNetwork.test(data, true).forEach(function(rate){
                         assert.isTrue(_.isNaN(rate));
                     });
 
@@ -192,7 +200,7 @@ module.exports = function(callback){
                 [0, 1].forEach(function(index){
                     test.getResultOf.returns((index === 1) ? 0 : 1);
 
-                    var results = test.neuralNetwork.test([[ [null],index ]]);
+                    var results = test.neuralNetwork.test([[ [null],index ]], true);
                     assert.equal(results[0], 0);
                     if (index !== 0)
                         assert.isTrue(_.isNaN(results[1]));
@@ -218,7 +226,7 @@ module.exports = function(callback){
                 [0, 1].forEach(function(index){
                     test.getResultOf.returns(index);
 
-                    var results = test.neuralNetwork.test([[ [null],index ]]);
+                    var results = test.neuralNetwork.test([[ [null],index ]], true);
                     assert.equal(results[0], 1);
                     if (index !== 0)
                         assert.isTrue(_.isNaN(results[1]));
@@ -244,7 +252,7 @@ module.exports = function(callback){
                 test.getResultOf.withArgs([1]).returns(1);
 
                 assert.deepEqual(test.neuralNetwork.test([[ [0],0 ],
-                                                          [ [1],1 ]]), [1,1,1]);
+                                                          [ [1],1 ]], true), [1,1,1]);
                     
                 assert.isTrue(test.log.calledOnce);
                 assert.isTrue(test.log.calledWith(messages.training.testStats(1, 1, 1, [1,1], [1,1], 2) + ''));
@@ -257,7 +265,7 @@ module.exports = function(callback){
 
                 assert.deepEqual(test.neuralNetwork.test([[ [0],0 ],
                                                           [ [1],1 ],
-                                                          [ [2],1 ]]), [2/3,1,1/2]);
+                                                          [ [2],1 ]], true), [2/3,1,1/2]);
                     
                 assert.isTrue(test.log.calledOnce);
                 assert.isTrue(test.log.calledWith(messages.training.testStats(2/3, 1, 1/2, [1,1], [1,2], 3) + ''));

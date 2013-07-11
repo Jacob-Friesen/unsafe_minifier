@@ -91,6 +91,14 @@ messages.generation = messages.create({
 messages.training = messages.create({
     filesNotSpecified: messages.generation.filesNotSpecified,
 
+    wrongTrainingDataFormat: function(){
+        return this.form('Error: Training data must be in the form:\n' +
+                         '[\n' +
+                         '[[input1,input2,...,inputn], [output1,output2,...,outputn]]\n' +
+                         '...' +
+                         '\n]');
+    },
+
     layerSizesNotSpecified: function(){
         return this.form('Error: The number of input, hidden and output nodes must be specified.');
     },

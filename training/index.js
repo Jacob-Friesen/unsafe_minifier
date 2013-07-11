@@ -4,12 +4,15 @@ var fs = require('fs'),
     _ = require('lodash');
 
 var u = require('../utility_functions.js'),
+    messages = new require('../messages.js')(),
     NeuralNetwork = require('./neural_network.js');
 
 // Handles training the networks and saving them.
 module.exports = function Trainer(files){
     if (u.nullOrUndefined(files))
         messages.training.filesNotSpecified().error();
+
+    this.NeuralNetwork = NeuralNetwork;
 
     this.PARTITION = 0.7,// Training portion out of 1
     this.ERROR_RATE = 0.1;// For each network
@@ -138,19 +141,26 @@ module.exports = function Trainer(files){
     
     // Trains and tests then saves (if toSave is true) the nueral network with the available data. Training and testing data must be in the form:
     // [
-    //      [[input1,input2,...,inputn], [output1,output2,...,outputn]],...
+    //      [[input1,input2,...,inputn], [output1,output2,...,outputn]],
+    //      ...
     // ]
-    // Gives the callback the object containing the successRate and network.
-    this.runNetwork = function(trainingData, testingData, toSave, index, callback){
-        var neuralNetwork = new NeuralNetwork(trainingData[0][0].length, trainingData[0][0].length * _this.HIDDEN_SIZE, trainingData[0][1].length);
-        neuralNetwork.train(trainingData, _this.ERROR_RATE, _this.PRINT_FANN_OUTPUT);
-        var success = neuralNetwork.test(testingData, _this.PRINT_NETWORK_STATS);
+    // Gives the callback all three of the rates for the network once tested.
+    this.runNetwork = function(training, testing, toSave, index, callback){
+        if (u.enu(training) || !_.isArray(training[0]) || !_.isArray(training[0][0]) || !_.isArray(training[0][1]))
+            messages.training.wrongTrainingDataFormat().error();
+
+        var neuralNetwork = new _this.NeuralNetwork(training[0][0].length, training[0][0].length * _this.HIDDEN_SIZE, training[0][1].length);
+        neuralNetwork.train(training, _this.ERROR_RATE, _this.PRINT_FANN_OUTPUT);
+
+        var rates = neuralNetwork.test(testing, _this.PRINT_NETWORK_STATS);
         
-        if (toSave)
-            return neuralNetwork.save(files.neuralNetwork[0].replace('.json',index + '.json'), function(){
-                return callback(success[0], success[1], success[2], neuralNetwork.network);
+        if (toSave){
+            return neuralNetwork.save(files.neuralNetwork[0].replace('.json', index + '.json'), function(){
+                if (callback) return callback(rates[0], rates[1], rates[2], neuralNetwork.network);
             });
-        return callback(success[0], success[1], success[2], neuralNetwork.network);
+        }
+
+        if (callback) return callback(rates[0], rates[1], rates[2], neuralNetwork.network);
     };
     
     return this;

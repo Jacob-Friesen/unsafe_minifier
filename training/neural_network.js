@@ -33,7 +33,7 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
     
     // See how many correct results are obtained using the data sent in, returns total, postive, and negative success rates. Prints the success rate
     // along with the positive and negative success rates if print is given. NaN indicates if any values were divided by 0 (check with lodash).
-    this.test = function(data){
+    this.test = function(data, printStats){
         var success = [0,0],
             tries = [0,0];
 
@@ -51,7 +51,8 @@ module.exports = function NeuralNetwork(inputNum, hiddenNum, outputNum){
             positiveRate = success[0]/tries[0],
             negativeRate = success[1]/tries[1];
         
-        messages.training.testStats(successRate, positiveRate, negativeRate, success, tries, length).send();
+        if (printStats)
+            messages.training.testStats(successRate, positiveRate, negativeRate, success, tries, length).send();
         
         return [successRate, positiveRate, negativeRate];
     };
