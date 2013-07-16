@@ -177,6 +177,14 @@ module.exports = function(callback){
                     assert.deepEqual(arguments[2], test.obj);
                 }).defaults(true, false, test.obj)();
             });
+
+            it('should return the original functions value when called', function(){
+                var newFunction = (function(arg1){
+                    return arg1;
+                }).defaults(true);
+
+                assert.isTrue(newFunction());
+            });
         });
 
         describe('#hasOwnPropertyChain()', function(){

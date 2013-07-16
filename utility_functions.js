@@ -55,7 +55,7 @@ module.exports = (function(){
                     args[index] = (typeof args[index] === 'undefined') ? defaults[index] : args[index]; 
                 });
 
-                toCall.apply(this, args);
+                return toCall.apply(this, args);
             }
         }
     }
