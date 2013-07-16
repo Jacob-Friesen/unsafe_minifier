@@ -18,18 +18,6 @@ module.exports = function(callback){
             callback();
         });
 
-        describe('#constructor()', function(){
-            // it('should throw an error if arguments.toArray already defined', function(){
-            //     arguments.toArray = 'set';
-            //     require('../utility_functions');
-            // });
-
-            it('should set a remove function for arrays and a defaults one for functions', function(){
-                assert.isFunction(Array.prototype.remove);
-                assert.isFunction(Function.prototype.defaults);
-            });
-        });
-
         // Can really only test bound for this type of thing due to randomness
         describe('#randomInt()', function() {
             it('should always give the name number when the ranges are the same', function(){
