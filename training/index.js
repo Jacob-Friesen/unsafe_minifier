@@ -14,7 +14,7 @@ module.exports = function Trainer(files){
 
     this.NeuralNetwork = NeuralNetwork;
 
-    this.PARTITION = 0.7,// Training portion out of 1
+    this.PARTITION = 0.7;// Training portion out of 1
     this.ERROR_RATE = 0.1;// For each network
     this.HIDDEN_SIZE = 4;// Multiple of input size
     this.NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number

@@ -1,12 +1,14 @@
-var chai = require('chai'),
+var _ = require('lodash'),
+    chai = require('chai'),
     assert = chai.assert,
     expect = chai.expect;
 
 var u = require('../utility_functions'),
+    helper = new require('./test_helpers.js')(),
     messages = new require('../messages')();
 module.exports = function(callback){ 
 
-    describe('utility_functions', function() {
+    describe('utility_functions', function(){
         var test = {};
         beforeEach(function(){
             test = {};
@@ -16,51 +18,15 @@ module.exports = function(callback){
             callback();
         });
 
-        // Unlikely this will fail, but it is a good idea to include it for testing reasons.
-        describe('#Array.prototype.remove()', function() {
-            var arr = [];
-            beforeEach(function(){
-                arr = [1, 2, 3, '4', '5', 6];// Strings are intentional
-            });
+        describe('#constructor()', function(){
+            // it('should throw an error if arguments.toArray already defined', function(){
+            //     arguments.toArray = 'set';
+            //     require('../utility_functions');
+            // });
 
-            it('should make the array length shorter', function() {
-                var length = arr.length;
-                arr.remove(0);
-                assert.equal(arr.length, length - 1);
-            });
-
-            function arrayEqual(array1, array2){
-                assert(array1.length === array2.length, 'One array is shorter than the other: ' +  array1.length +" to "+ array2.length);
-                array1.forEach(function(element, index){
-                    assert.equal(array2[index], element, 'Elements at index ' + index + ' are not equal');
-                });
-            }
-
-            it('should remove the first array member and have no undefineds', function() {
-                arr.remove(0);
-                arrayEqual([2, 3,'4','5', 6], arr);
-            });
-
-                it('should remove the second array member and have no undefineds', function() {
-                arr.remove(1);
-                arrayEqual([1, 3,'4','5', 6], arr);
-            });
-
-            it('should remove the last array member and have no undefineds', function() {
-                arr.remove(-1);
-                arrayEqual([1, 2, 3,'4','5'], arr);
-            });
-
-            it('should remove nothing and return null when a index that is too high is requested', function() {
-                var retrieved  = arr.remove(arr.length);
-                arrayEqual([1, 2, 3,'4','5', 6], arr);
-                assert.isNull(retrieved);
-            });
-
-            it('should remove nothing and return null when a index that is too low is requested (via negatives)', function() {
-                var retrieved  = arr.remove(arr.length * -1);
-                arrayEqual([1, 2, 3,'4','5', 6], arr);
-                assert.isNull(retrieved);
+            it('should set a remove function for arrays and a defaults one for functions', function(){
+                assert.isFunction(Array.prototype.remove);
+                assert.isFunction(Function.prototype.defaults);
             });
         });
 
@@ -121,6 +87,108 @@ module.exports = function(callback){
                 test = {property: ''};
                 assert.isFalse(u.enu(test));
             })
+        });
+
+        // Unlikely this will fail, but it is a good idea to include some basic tests for test coverage reasons.
+        describe('#Array.prototype.remove()', function() {
+            function arrayEqual(array1, array2){
+                assert(array1.length === array2.length, 'One array is shorter than the other: ' +  array1.length +" to "+ array2.length);
+                array1.forEach(function(element, index){
+                    assert.equal(array2[index], element, 'Elements at index ' + index + ' are not equal');
+                });
+            }
+
+            var arr = [];
+            beforeEach(function(){
+                arr = [1, 2, 3, '4', '5', 6];// Strings are intentional
+            });
+
+            it('should make the array length shorter', function(){
+                var length = arr.length;
+                arr.remove(0);
+                assert.equal(arr.length, length - 1);
+            });
+
+            it('should remove the first array member and have no undefineds', function(){
+                arr.remove(0);
+                arrayEqual([2, 3,'4','5', 6], arr);
+            });
+
+            it('should remove the second array member and have no undefineds', function(){
+                arr.remove(1);
+                arrayEqual([1, 3,'4','5', 6], arr);
+            });
+
+            it('should remove the last array member and have no undefineds', function(){
+                arr.remove(-1);
+                arrayEqual([1, 2, 3,'4','5'], arr);
+            });
+
+            it('should remove nothing and return null when a index that is too high is requested', function(){
+                var retrieved  = arr.remove(arr.length);
+                arrayEqual([1, 2, 3,'4','5', 6], arr);
+                assert.isNull(retrieved);
+            });
+
+            it('should remove nothing and return null when a index that is too low is requested (via negatives)', function(){
+                var retrieved  = arr.remove(arr.length * -1);
+                arrayEqual([1, 2, 3,'4','5', 6], arr);
+                assert.isNull(retrieved);
+            });
+        });
+
+        describe('#Function.prototype.defaults', function() {
+            beforeEach(function(){
+                test.obj = {set: 'set'};
+            });
+
+            it('should set no default values if none were given', function(){
+                (function(arg1, arg2){
+                    assert.isTrue(arg1);
+                    assert.deepEqual(arg2, test.obj);
+                }).defaults()(true, test.obj);
+            });
+
+            it('should set one default value if function was called with nothing and one default value was specified', function(){
+                helper.nullUndefinedTest(function(arg1){
+                    (function(inArg1){
+                        assert.deepEqual(inArg1, arg1);
+                    }).defaults(arg1)();
+
+                })(true)(1)('test')(test.obj);
+            });
+
+            it('should set one default value if function was called with one undefined first value and a later value', function(){
+                helper.nullUndefinedTest(function(arg1){
+                    (function(inArg1, inArg2){
+                        assert.deepEqual(inArg1, arg1);
+                        assert.isTrue(inArg2);
+                    }).defaults(arg1)({}.undefined, true);
+
+                })(true)(1)('test')(test.obj);
+            });
+
+
+            it('should set all the parameter defaults when all are not defined by call and defaults specify all of them', function(){
+                test.obj1 = _.cloneDeep(test.obj);
+
+                helper.dualNullUndefinedTest(function(arg1, arg2){
+                    (function(inArg1, inArg2){
+                        assert.deepEqual(inArg1, arg1);
+                        assert.deepEqual(inArg2, arg2);
+                    }).defaults(arg1, arg2)();
+
+                })(true, false)(1, 2)('test1', 'test2')(test.obj, test.obj1);
+            });
+
+            // (Completes overall test that function parameters have no effect)
+            it('should set multiple default values even if no parameters are given (accessible through arguments)', function(){
+                (function(){
+                    assert.isTrue(arguments[0]);
+                    assert.isFalse(arguments[1]);
+                    assert.deepEqual(arguments[2], test.obj);
+                }).defaults(true, false, test.obj)();
+            });
         });
 
         describe('#hasOwnPropertyChain()', function(){

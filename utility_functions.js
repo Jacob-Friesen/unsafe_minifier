@@ -3,27 +3,10 @@
  **/
 var _ = require('lodash');
 
-var messages = require('./messages.js');
+var messages = new require('./messages.js')();
 
 module.exports = (function(){
     var _this = this;
-
-    // modified from http://javascript.crockford.com/prototypal.html
-    Object.nu = function (o) {
-        function F() {};
-        F.prototype = o;
-        return new F();
-    };
-    
-    // Array Remove - By John Resig (MIT Licensed), modified with a too high and too low checker
-    // Note: delete arr[index] leaves undefined elements in the array, no shifting is done. Hence why this is needed.
-    Array.prototype.remove = function(from, to) {
-        if (from >= this.length || from <= this.length * -1) return null;// modified here
-
-        var rest = this.slice((to || from) + 1 || this.length);
-        this.length = from < 0 ? this.length + from : from;
-        return this.push.apply(this, rest);
-    };
     
     this.randomInt = function(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -37,6 +20,44 @@ module.exports = (function(){
     this.enu = function(item){
         var undef = _this.nullOrUndefined(item);
         return (!undef) ? _.isEmpty(item) : undef;
+    }
+
+    if (this.nullOrUndefined(Array.prototype.remove)){
+        // Array Remove - By John Resig (MIT Licensed), modified with a too high and too low checker
+        // Note: delete arr[index] leaves undefined elements in the array, no shifting is done. Hence why this is needed.
+        Array.prototype.remove = function(from, to) {
+            if (from >= this.length || from <= this.length * -1) return null;// modified here
+
+            var rest = this.slice((to || from) + 1 || this.length);
+            this.length = from < 0 ? this.length + from : from;
+            return this.push.apply(this, rest);
+        };
+    }
+
+    // If this property already exists (for example, in another library) make sure to error out saying that
+    if (!this.nullOrUndefined(Function.prototype.defaults)){
+        messages.utility.defaultsAlreadyDefined().error();
+    }
+    else {
+        // Allows for the setting of default properties (in order), returns a new wrapped function that applies defaults. Also, allows null and
+        // undefined setting. Syntax:
+        // (function(arg1, arg2){
+        //     ...  
+        // }).defaults(arg1Default, arg2Default);
+        Function.prototype.defaults = function(){
+            var defaults = Array.prototype.slice.call(arguments),// turn arguments into basic array
+                toCall = this;
+
+            return function(){
+                var args = Array.prototype.slice.call(arguments);
+
+                defaults.forEach(function(val, index){
+                    args[index] = (typeof args[index] === 'undefined') ? defaults[index] : args[index]; 
+                });
+
+                toCall.apply(this, args);
+            }
+        }
     }
         
     // Check if item is null then if it has property, then check if its null, then check next property etc. Arguments must be in string form.

@@ -124,7 +124,15 @@ messages.training = messages.create({
 
 messages.utility = messages.create({
     fileNoParse: function(file){
-        return this.form('The file could not be parsed:\n' + file);
+        return this.form('Error: The file could not be parsed:\n' + file);
+    },
+
+    defaultsAlreadyDefined: function(){
+        return this.form('Error: Could not created defaults function, defaults for the Function has already been defined:\n' + Function.defaults);
+    },
+
+    toArrayAlreadyDefined: function(){
+        return this.form('Error: Could not created toArray function, toArray for the arguments object has already been defined:\n' + arguments.toArray);
     }
 })
 
