@@ -91,6 +91,10 @@ messages.generation = messages.create({
 messages.training = messages.create({
     filesNotSpecified: messages.generation.filesNotSpecified,
 
+    cannotPartition: function(){
+        return this.form('Error: Cannot partition null or undefined data');
+    },
+
     wrongTrainingDataFormat: function(){
         return this.form('Error: Training data must be in the form:\n' +
                          '[\n' +
@@ -128,7 +132,8 @@ messages.utility = messages.create({
     },
 
     defaultsAlreadyDefined: function(){
-        return this.form('Error: Could not created defaults function, defaults for the Function has already been defined:\n' + Function.defaults);
+        return this.form('Error: Could not created defaults or defaultsWith function, defaults or defaultsWith for the Function has already been ' +
+                         'defined:\n' + Function.defaults);
     },
 
     toArrayAlreadyDefined: function(){

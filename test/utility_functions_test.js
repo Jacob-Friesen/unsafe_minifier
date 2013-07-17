@@ -125,65 +125,116 @@ module.exports = function(callback){
             });
         });
 
-        describe('#Function.prototype.defaults', function() {
+        describe('#Function.prototype.defaultsWith', function() {
+            function undef(value){
+                return typeof value === 'undefined';
+            }
+
             beforeEach(function(){
                 test.obj = {set: 'set'};
             });
 
-            it('should set no default values if none were given', function(){
-                (function(arg1, arg2){
-                    assert.isTrue(arg1);
-                    assert.deepEqual(arg2, test.obj);
-                }).defaults()(true, test.obj);
+            it('should throw an error if there is at least one default and no default checking function exists', function(){
+                expect(function(){
+                    (function(arg1, arg2){
+                    }).defaultsWith({}.undefined, true)(true, test.obj);
+                }).to.throw();
             });
 
-            it('should set one default value if function was called with nothing and one default value was specified', function(){
-                helper.nullUndefinedTest(function(arg1){
-                    (function(inArg1){
-                        assert.deepEqual(inArg1, arg1);
-                    }).defaults(arg1)();
-
-                })(true)(1)('test')(test.obj);
-            });
-
-            it('should set one default value if function was called with one undefined first value and a later value', function(){
-                helper.nullUndefinedTest(function(arg1){
-                    (function(inArg1, inArg2){
-                        assert.deepEqual(inArg1, arg1);
-                        assert.isTrue(inArg2);
-                    }).defaults(arg1)({}.undefined, true);
-
-                })(true)(1)('test')(test.obj);
-            });
+            (function testDefaults(method, isDefaultsWith){
+                describe('['+method+']', function(){
+                    function setArgs(callback){
+                        var args = Array.prototype.slice.call(arguments, 1);
+                        if (isDefaultsWith) args.unshift(callback);
+                        return args;
+                    }
 
 
-            it('should set all the parameter defaults when all are not defined by call and defaults specify all of them', function(){
+                    it('should set no default values if none were given', function(){
+                        (function(arg1, arg2){
+                            assert.isTrue(arg1);
+                            assert.deepEqual(arg2, test.obj);
+                        })[method]()(true, test.obj);
+                    });
+
+                    it('should set one default value if function was called with nothing and one default value was specified', function(){                    
+                        helper.nullUndefinedTest(function(arg1){
+                            var newFunction = (function def(inArg1){
+                                assert.deepEqual(inArg1, arg1);
+                            });
+
+                            newFunction[method].apply(newFunction, setArgs(undef, arg1) )();
+
+                        })(true)(1)('test')(test.obj);
+                    });
+
+                    it('should set one default value if function was called with one undefined first value and a later value', function(){
+                        helper.nullUndefinedTest(function(arg1){
+                            var newFunction = (function(inArg1, inArg2){
+                                assert.deepEqual(inArg1, arg1);
+                                assert.isTrue(inArg2);
+                            });
+
+                            newFunction[method].apply(newFunction, setArgs(undef, arg1) )({}.undefined, true);
+
+                        })(true)(1)('test')(test.obj);
+                    });
+
+
+                    it('should set all the parameter defaults when all are not defined by call and defaults specify all of them', function(){
+                        test.obj1 = _.cloneDeep(test.obj);
+
+                        helper.dualNullUndefinedTest(function(arg1, arg2){
+                            var newFunction = (function(inArg1, inArg2){
+                                assert.deepEqual(inArg1, arg1);
+                                assert.deepEqual(inArg2, arg2);
+                            });
+
+                            newFunction[method].apply(newFunction, setArgs(undef, arg1, arg2) )();
+
+                        })(true, false)(1, 2)('test1', 'test2')(test.obj, test.obj1);
+                    });
+
+                    // (Completes overall test that function parameters have no effect)
+                    it('should set multiple default values even if no parameters are given (accessible through arguments)', function(){
+                        var newFunction = (function(){
+                            assert.isTrue(arguments[0]);
+                            assert.isFalse(arguments[1]);
+                            assert.deepEqual(arguments[2], test.obj);
+                        });
+
+                        newFunction[method].apply(newFunction, setArgs(undef, true, false, test.obj) )();
+                    });
+
+                    it('should return the original functions value when called', function(){
+                        var newFunction = (function(arg1){
+                            return arg1;
+                        });
+
+                        newFunction = newFunction[method].apply(newFunction, setArgs(undef, true) );
+
+                        assert.isTrue(newFunction());
+                    });
+                });
+
+                return testDefaults;
+            // Call it with both defined defaults methods
+            })('defaultsWith', true)('defaults', false);
+
+            it('should set none of the parameter defaults when all are not defined by call and defaults specify all of them, but the default function' +
+               'fails on all of them', function(){
                 test.obj1 = _.cloneDeep(test.obj);
+                function check(value){
+                    return false;
+                }
 
                 helper.dualNullUndefinedTest(function(arg1, arg2){
                     (function(inArg1, inArg2){
-                        assert.deepEqual(inArg1, arg1);
-                        assert.deepEqual(inArg2, arg2);
-                    }).defaults(arg1, arg2)();
+                        assert.isUndefined(inArg1);
+                        assert.isUndefined(inArg2);
+                    }).defaultsWith(check, arg1, arg2)();
 
                 })(true, false)(1, 2)('test1', 'test2')(test.obj, test.obj1);
-            });
-
-            // (Completes overall test that function parameters have no effect)
-            it('should set multiple default values even if no parameters are given (accessible through arguments)', function(){
-                (function(){
-                    assert.isTrue(arguments[0]);
-                    assert.isFalse(arguments[1]);
-                    assert.deepEqual(arguments[2], test.obj);
-                }).defaults(true, false, test.obj)();
-            });
-
-            it('should return the original functions value when called', function(){
-                var newFunction = (function(arg1){
-                    return arg1;
-                }).defaults(true);
-
-                assert.isTrue(newFunction());
             });
         });
 

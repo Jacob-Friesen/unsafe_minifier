@@ -35,7 +35,7 @@ module.exports = (function(){
     }
 
     // If this property already exists (for example, in another library) make sure to error out saying that
-    if (!this.nullOrUndefined(Function.prototype.defaults)){
+    if (!this.nullOrUndefined(Function.prototype.defaults) || !this.nullOrUndefined(Function.prototype.defaultsWith)){
         messages.utility.defaultsAlreadyDefined().error();
     }
     else {
@@ -44,20 +44,33 @@ module.exports = (function(){
         // (function(arg1, arg2){
         //     ...  
         // }).defaults(arg1Default, arg2Default);
-        Function.prototype.defaults = function(){
-            var defaults = Array.prototype.slice.call(arguments),// turn arguments into basic array
+        // The callback called with the value will determine if the value is set to a default 
+        Function.prototype.defaultsWith = function(callback){
+            var defaults = Array.prototype.slice.call(arguments, 1),// turn arguments into basic array excluding first argument
                 toCall = this;
 
             return function(){
                 var args = Array.prototype.slice.call(arguments);
 
                 defaults.forEach(function(val, index){
-                    args[index] = (typeof args[index] === 'undefined') ? defaults[index] : args[index]; 
+                    args[index] = callback(args[index]) ? defaults[index] : args[index]; 
                 });
 
                 return toCall.apply(this, args);
             }
         }
+
+        // Same as above but defaults to using undefined for checks
+        Function.prototype.defaults = function(){
+            // I have to add to a made args array so I can preserve the arguments sent in
+            var args = Array.prototype.slice.call(arguments);
+            args.unshift(function(value){
+                return typeof value === 'undefined';
+            });
+
+            return Function.prototype.defaultsWith.apply(this, args); 
+        }
+
     }
         
     // Check if item is null then if it has property, then check if its null, then check next property etc. Arguments must be in string form.

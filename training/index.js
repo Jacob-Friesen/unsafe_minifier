@@ -125,19 +125,22 @@ module.exports = function Trainer(files){
         return newData;
     };
     
-    // Partitions the data randomly according to the partition amount 
-    this.partitionData = function(data){
+    // Partitions the data randomly according to the partition amount modifies sent in data.
+    this.partitionData = (function(data){
+        if(u.nullOrUndefined(data))
+            messages.training.cannotPartition().error();
+
         var training = [];
         
         var portionNeeded = data.length * _this.PARTITION;
         while (training.length < portionNeeded){
-            point = u.randomInt(0, data.length - 1);
+            var point = u.randomInt(0, data.length - 1);
             training.push(data[point]);
             data.remove(point);
         };
         
         return {training: training, test: data};
-    };
+    }).defaultsWith(u.nullOrUndefined, []);
     
     // Trains and tests then saves (if toSave is true) the nueral network with the available data. Training and testing data must be in the form:
     // [

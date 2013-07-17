@@ -36,7 +36,7 @@ module.exports = function(callback){
             });
 
             it('should have the correct variables set', function(){
-                var t = test.trainer;test.neuralNetworkFile
+                var t = test.trainer;
 
                 assert.deepEqual(NeuralNetwork, t.NeuralNetwork);
 
@@ -47,6 +47,47 @@ module.exports = function(callback){
                 [t.SAVE_NETWORKS, t.PRINT_DATA_STATS, t.PRINT_FANN_OUTPUT, t.PRINT_NETWORK_STATS, t.PRINT_AVERAGE_STATS].forEach(function(variable){
                     assert.isTrue(_.isBoolean(variable));
                 });
+            });
+        });
+
+        describe('#partitionData()', function(){
+            function setData(length){
+                var data = Array(length);
+                return test.trainer.partitionData(data);
+            }
+
+            it('should return an object containing empty test and training data if data is empty, null or undefined', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.partitionData(data), {training: [], test: []});
+                });
+            });
+
+            it('should split the data according to the partition specified', function(){
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, length * test.trainer.PARTITION);
+                assert.equal(sets.test.length, length - (length * test.trainer.PARTITION));
+            });
+
+            it('should split the data 0 100 when the partion is 1', function(){
+                test.trainer.PARTITION = 1;
+
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, 100);
+                assert.equal(sets.test.length, 0);
+            });
+
+            it('should split the data 100 0 when the partion is 0', function(){
+                test.trainer.PARTITION = 0;
+
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, 0);
+                assert.equal(sets.test.length, 100);
             });
         });
 
