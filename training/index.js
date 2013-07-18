@@ -95,8 +95,13 @@ module.exports = function Trainer(files){
         return [inputs, [(dataPoint.valid === 'yes') ? 1 : 0]];
     };
     
-    // Makes the ratio of invalid to valid cases equal and returns the array, only takes formatted data. Does this randomly.
-    this.evenizeData = function(data){
+    // Makes the ratio of invalid to valid cases equal and returns the array. Does this randomly. Only takes formatted data.
+    // [
+    //      [[input1,input2,...,inputn], [output1,output2,...,outputn]],
+    //      ...
+    // ]
+    // Returns the modified data.
+    this.evenizeData = (function(data){
         var newData = [];
         
         // Find ratio of each: invalid/valid
@@ -123,7 +128,7 @@ module.exports = function Trainer(files){
         }
         
         return newData;
-    };
+    }).defaultsWith(u.nullOrUndefined, []);
     
     // Partitions the data randomly according to the partition amount modifies sent in data.
     this.partitionData = (function(data){

@@ -50,6 +50,79 @@ module.exports = function(callback){
             });
         });
 
+        describe('#evenizeData()', function(){
+            function CheckValidInvalid(data, correct){
+                var found = [0,0];
+                test.trainer.evenizeData(data).forEach(function(point) {
+                    found[point[1]] += 1;
+                });
+
+                assert.deepEqual(found, correct);
+            }
+
+            it('should return an empty array when input is enu', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.evenizeData(data), []);
+                });
+            });
+
+            it('should return an empty array when there is no valid data', function(){
+                assert.deepEqual(test.trainer.evenizeData([
+                    [[1,2],[0]],
+                    [[3,4],[0]]
+                ]), []);
+            });
+
+            it('should return an empty array when there is no invalid data', function(){
+                assert.deepEqual(test.trainer.evenizeData([
+                    [[1,2],[1]],
+                    [[3,4],[1]]
+                ]), []);
+            });
+
+            it('should return an array containing one valid and invalid when there are 2 values', function(){
+                var data = [
+                    [[1,2],[0]],
+                    [[3,4],[1]]
+                ];
+                var old = data.concat([]);
+
+                data = test.trainer.evenizeData(data);
+                data.sort(function(point1, point2){
+                      if (point1[1] < point2[1])
+                         return -1;
+                      if (point1[1] > point2[1])
+                         return 1;
+                      return 0;
+                });
+                assert.deepEqual(data, old);
+            });
+
+            it('should return an array containing one valid and invalid when there are 3 values (1 invalid only)', function(){
+                var data = [
+                    [[1,2],[1]],
+                    [[3,4],[0]],
+                    [[4,5],[1]]
+                ];
+
+                CheckValidInvalid(data, [1,1]);
+            });
+
+            it('should return an array containing two valids and invalids when there are 7 values (2 invalids only)', function(){
+                var data = [
+                    [[1,2],[1]],
+                    [[3,4],[0]],
+                    [[4,5],[1]],
+                    [[6,7],[1]],
+                    [[8,9],[1]],
+                    [[10,11],[0]],
+                    [[12,13],[1]]
+                ];
+
+                CheckValidInvalid(data, [2,2]);
+            });
+        });
+
         describe('#partitionData()', function(){
             function setData(length){
                 var data = Array(length);
