@@ -73,27 +73,29 @@ module.exports = function Trainer(files){
     };
     
     // Turns all data into numeric values and puts it into the correct array form specified in train network.
-    this.formatData = function(data){
+    this.formatData = (function(data){
         var newData = [];
         data.forEach(function(dataPoint){            
             newData.push(_this.formatDataPoint(dataPoint));
         });
         
         return newData;
-    };
+    }).defaultsWith(u.nullOrUndefined, []);
     
-    this.formatDataPoint = function(dataPoint){
+    // Transform all data in a data point to a number. Returns an array:
+    // [[1,2,...], [0]] <- 0 for invalid, 1 for valid
+    this.formatDataPoint = (function(point){
         // Put input data into array form turning characters into thier ascii numbers
         var inputs = [];
-        _.reject(dataPoint, function(__, attr){ return attr === 'name' ||  attr === 'valid'; }).forEach( function(part){
-            if (typeof part ===  "string")
-                inputs.push(part.charCodeAt(0));//take first char of every string value
-            else//assuming an integer
+        _.reject(point, function(__, attr){ return attr === 'name' || attr === 'valid' }).forEach(function(part){
+            if (typeof part === "string")
+                inputs.push(part.charCodeAt(0));// Take first char of every string value
+            else // Assuming an integer
                 inputs.push(part);
         });
         
-        return [inputs, [(dataPoint.valid === 'yes') ? 1 : 0]];
-    };
+        return [inputs, [(point.valid === 'yes') ? 1 : 0]];
+    }).defaultsWith(u.nullOrUndefined, []);
     
     // Makes the ratio of invalid to valid cases equal and returns the array. Does this randomly. Only takes formatted data.
     // [

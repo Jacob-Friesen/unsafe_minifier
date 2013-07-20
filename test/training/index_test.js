@@ -50,6 +50,63 @@ module.exports = function(callback){
             });
         });
 
+        describe('#formatData()', function(){
+            it('should return an empty array when datapoint is enu', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.formatData(data), []);
+                });
+            });
+
+            it('should return the array of added values', function(){
+                var data = [0,1,2].map(function(setTo){
+                    return {
+                        prop1: setTo,
+                        prop2: setTo + 1
+                    }
+                });
+
+                assert.deepEqual(test.trainer.formatData(data), [0,1,2].map(function(setTo){
+                    return [[setTo, setTo + 1],[0]];
+                }));
+            });
+        });
+
+        describe('#formatDataPoint()', function(){
+            it('should return an array like [[], [0]] when datapoint is enu', function(){
+                helper.ENUTest(function(point){
+                    assert.deepEqual(test.trainer.formatDataPoint(point), [[],[0]]);
+                });
+            });
+
+            it('should never include the name or valid values in the input array', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({
+                    name: 'test',
+                    other: 1,
+                    valid: 'yes'
+                })[0], [1]);
+            });
+
+            it('should transform all values in the input array to numbers if necessary', function(){
+                var rNum = 'r'.charCodeAt(0);
+                assert.deepEqual(test.trainer.formatDataPoint({
+                    name: 'test',
+                    prop1: 1,
+                    prop2: 'red',
+                    prop3: 'r',
+	            prop4: 3,
+                    valid: 'yes'
+                })[0], [1,rNum,rNum,3]);
+            });
+
+            it('should return a 0 for the output array when valid is "no"', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({valid: 'no'})[1][0], 0);
+            });
+
+            it('should return a 1 for the output array when valid is "yes"', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({valid: 'yes'})[1][0], 1);
+            });
+        });
+
         describe('#evenizeData()', function(){
             function CheckValidInvalid(data, correct){
                 var found = [0,0];
