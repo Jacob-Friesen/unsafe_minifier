@@ -12,8 +12,6 @@ var helper = new require('../test_helpers.js')(),
     fs = require('fs'),
     NeuralNetwork = require('../../training/neural_network.js');
 
-
-
 module.exports = function(callback){
     describe('NeuralNetwork', function(){
 

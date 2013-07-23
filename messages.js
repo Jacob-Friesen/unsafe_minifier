@@ -89,6 +89,12 @@ messages.generation = messages.create({
 });
 
 messages.training = messages.create({
+    averageStats: function(networks, totalSuccess){
+        return this.form('\n' + networks + ' Accuracy: ' + totalSuccess[0]/networks +
+                  '\nPrecision: ' + totalSuccess[1]/networks +
+                  '\nNegatives Rate: ' + totalSuccess[2]/networks + '\n');
+    },
+
     filesNotSpecified: messages.generation.filesNotSpecified,
 
     cannotPartition: function(){

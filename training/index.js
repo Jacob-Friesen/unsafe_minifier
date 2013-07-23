@@ -14,22 +14,21 @@ module.exports = function Trainer(files){
 
     this.NeuralNetwork = NeuralNetwork;
 
-    this.PARTITION = 0.7;// Training portion out of 1
-    this.ERROR_RATE = 0.1;// For each network
-    this.HIDDEN_SIZE = 4;// Multiple of input size
-    this.NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number
-    this.SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5
+    this.PARTITION = 0.7;// Training portion out of 1.
+    this.ERROR_RATE = 0.1;// For each network.
+    this.HIDDEN_SIZE = 4;// Multiple of input size.
+    this.NETWORKS = 5;// Number of networks to create, highly recommended to disable SAVE_NETWORKS when using a large number.
+    this.SAVE_NETWORKS = true;// All the networks will be saved, but the minification will only use the first 5.
 
-    this.PRINT_DATA_STATS = true;// Print statistics of initial data before partitioning and equalizing yes/nos
-    this.PRINT_FANN_OUTPUT = false;// Whether FANN based output will appear
-    this.PRINT_NETWORK_STATS = false;// Print statistics of individual networks
-    this.PRINT_AVERAGE_STATS = true;// Print statistics across all network creations
+    this.PRINT_DATA_STATS = true;// Print statistics of initial data before partitioning and equalizing yes/nos.
+    this.PRINT_FANN_OUTPUT = false;// Whether FANN based output will appear.
+    this.PRINT_NETWORK_STATS = false;// Print statistics of individual networks.
 
     var _this = this;
     
     this.train = function(callback){
         console.log('\ntraining data...');
-        
+
         // get function statistics
         fs.readFile(files.combinedData[0], 'utf8', function (err, data) {
             if (err) throw err;
@@ -48,29 +47,43 @@ module.exports = function Trainer(files){
                 console.log("Number of Data Points: " + combinedData.length);
             }
             
-            var totalSuccess = [0,0,0];// total, positive, negative
-            (function run(time){
-                var organized = _this.evenizeData(_this.formatData(combinedData));
-                var dataPartitions = _this.partitionData(organized);
-                
-                // Run the network, displaying the average success rate after calling the callback if it has ran enough times.
-                return _this.runNetwork(dataPartitions.training, dataPartitions.test, _this.SAVE_NETWORKS, time, function(success, positives, negatives){
-                    totalSuccess = [totalSuccess[0] + success, totalSuccess[1] + positives, totalSuccess[2] + negatives];
-                    if (time < _this.NETWORKS - 1)
-                        return run(time + 1);
-                    else{
-                        if (_this.PRINT_AVERAGE_STATS){
-                            console.log('\n' + _this.NETWORKS + ' Accuracy: ' + totalSuccess[0]/_this.NETWORKS);
-                            console.log('Precision: ' + totalSuccess[1]/_this.NETWORKS);
-                            console.log('Negatives Rate: ' + totalSuccess[2]/_this.NETWORKS);
-                        }
-                        console.log();
-                        return callback();
-                    }
-                });
-            })(0);
+            _this.runTraining(combinedData, callback);
         });
     };
+
+    // Trains and validates the nueral networks, uses combined data in the format:
+    // [{
+    //      name: 'test-1',
+    //      param1: param1Val,
+    //      ...
+    //      paramN: paramNVal,
+    //      valid: <'yes'/'no'>
+    // },
+    // ...
+    // ]
+    // Returns the networks [total, positive, negative] success rates.
+    this.runTraining = (function(combinedData, callback){
+        
+        // Run the network, displaying the average success rate after calling the callback if it has been run enough times.
+        var totalSuccess = [0,0,0];
+        return (function run(time){
+            var organized = _this.evenizeData(_this.formatData(combinedData)),
+                partitions = _this.partitionData(organized);
+
+            return _this.runNetwork(partitions.training, partitions.testing, _this.SAVE_NETWORKS, time, function(success, positives, negatives){
+                totalSuccess = [totalSuccess[0] + success, totalSuccess[1] + positives, totalSuccess[2] + negatives];
+
+                if (time < _this.NETWORKS - 1)
+                    return run(time + 1);
+                else {
+                    messages.training.averageStats(_this.NETWORKS, totalSuccess).send();
+
+                    if (callback) return callback();
+                }
+            });
+        })(0);
+
+    }).defaults([]);
     
     // Turns all data into numeric values and puts it into the correct array form specified in train network.
     this.formatData = (function(data){
@@ -146,7 +159,7 @@ module.exports = function Trainer(files){
             data.remove(point);
         };
         
-        return {training: training, test: data};
+        return {training: training, testing: data};
     }).defaultsWith(u.nullOrUndefined, []);
     
     // Trains and tests then saves (if toSave is true) the nueral network with the available data. Training and testing data must be in the form:
@@ -156,15 +169,19 @@ module.exports = function Trainer(files){
     // ]
     // Gives the callback all three of the rates for the network once tested.
     this.runNetwork = function(training, testing, toSave, index, callback){
-        if (u.enu(training) || !_.isArray(training[0]) || !_.isArray(training[0][0]) || !_.isArray(training[0][1]))
+        if ( !_.isEmpty(training) && (!_.isArray(training[0]) || !_.isArray(training[0][0]) || !_.isArray(training[0][1])) ) 
             messages.training.wrongTrainingDataFormat().error();
 
-        var neuralNetwork = new _this.NeuralNetwork(training[0][0].length, training[0][0].length * _this.HIDDEN_SIZE, training[0][1].length);
-        neuralNetwork.train(training, _this.ERROR_RATE, _this.PRINT_FANN_OUTPUT);
+        var rates = [0,0,0],
+            neuralNetwork = {network: {}};
+        if (!_.isEmpty(training)){_
+            var neuralNetwork = new _this.NeuralNetwork(training[0][0].length, training[0][0].length * _this.HIDDEN_SIZE, training[0][1].length);
+            neuralNetwork.train(training, _this.ERROR_RATE, _this.PRINT_FANN_OUTPUT);
 
-        var rates = neuralNetwork.test(testing, _this.PRINT_NETWORK_STATS);
+            rates = neuralNetwork.test(testing, _this.PRINT_NETWORK_STATS);
+        }
         
-        if (toSave){
+        if (toSave && neuralNetwork.save){
             return neuralNetwork.save(files.neuralNetwork[0].replace('.json', index + '.json'), function(){
                 if (callback) return callback(rates[0], rates[1], rates[2], neuralNetwork.network);
             });

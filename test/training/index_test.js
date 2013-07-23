@@ -44,9 +44,82 @@ module.exports = function(callback){
                     assert.isTrue(_.isNumber(variable));
                 });
 
-                [t.SAVE_NETWORKS, t.PRINT_DATA_STATS, t.PRINT_FANN_OUTPUT, t.PRINT_NETWORK_STATS, t.PRINT_AVERAGE_STATS].forEach(function(variable){
+                [t.SAVE_NETWORKS, t.PRINT_DATA_STATS, t.PRINT_FANN_OUTPUT, t.PRINT_NETWORK_STATS].forEach(function(variable){
                     assert.isTrue(_.isBoolean(variable));
                 });
+            });
+        });
+
+        describe('#runTraining()', function(){
+            beforeEach(function(){
+                test.callback = stub();
+                test.averageStats = stub(messages.training, 'averageStats');
+                test.averageStats.returns({send: function(){} });
+
+                test.formatData = stub(test.trainer, 'formatData');
+                test.evenizeData = stub(test.trainer, 'evenizeData');
+                test.partitionData = stub(test.trainer, 'partitionData');
+                test.partitionData.returns({training: [], test: []});
+
+                test.runNetwork = stub(test.trainer, 'runNetwork');
+                test.runNetwork.callsArg(4);
+
+                messages.training.print = false;
+            });
+
+            afterEach(function(){
+                test.averageStats.restore();
+                test.formatData.restore();
+                test.evenizeData.restore();
+                test.partitionData.restore();
+                test.runNetwork.restore();
+            });
+
+            it('should call run network with the test and training dataPartitions, whether to save the networks, and the current recurse, and call ' +
+               'the callback', function(){
+                // Formats don't matter just need to tell if the vars were passed correctly
+                var training = ['test1'],
+                    testing = ['test2'];
+                test.partitionData.returns({training: training, testing: testing});
+
+                test.trainer.runTraining([], test.callback);
+
+                Array(test.trainer.NETWORKS).forEach(function(__, index){
+                     assert.isTrue(test.runNetwork.calledWith(training, test, true, index));
+                });
+                assert.equal(test.runNetwork.callCount, test.trainer.NETWORKS);
+            });
+
+            it('should print average stats with [0,0,0] for success rates when combinedData is enu NETWORKS times and call the callback', function(){
+                helper.ENUTest(function(data){
+                    messages.training.print = true;
+
+                    test.trainer.runTraining(data, test.callback);
+
+                    assert.isTrue(test.averageStats.calledOnce);
+                    test.averageStats.callCount -= 1;
+                    assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, [0,0,0]));
+                    assert.isTrue(test.callback.calledOnce);
+                    test.callback.callCount -= 1;
+                });
+            });
+
+            it('should print average stats with 0.625,0.5,0.75 each multiplied by the network for success rates when runNetwork provides that', 
+            function(){
+                messages.training.print = true;
+
+                // Have to restore and stub again to get a proper first call
+                test.runNetwork.restore();
+                test.runNetwork = stub(test.trainer, 'runNetwork');
+
+                var rates = [0.625,0.5,0.75];
+                test.runNetwork.callsArgWith(4, rates[0], rates[1], rates[2]);
+
+                test.trainer.runTraining([], test.callback);
+
+                assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, rates.map(function(rate){
+                    return rate * test.trainer.NETWORKS;
+                })));
             });
         });
 
@@ -188,7 +261,7 @@ module.exports = function(callback){
 
             it('should return an object containing empty test and training data if data is empty, null or undefined', function(){
                 helper.ENUTest(function(data){
-                    assert.deepEqual(test.trainer.partitionData(data), {training: [], test: []});
+                    assert.deepEqual(test.trainer.partitionData(data), {training: [], testing: []});
                 });
             });
 
@@ -197,7 +270,7 @@ module.exports = function(callback){
                     sets = setData(length);
 
                 assert.equal(sets.training.length, length * test.trainer.PARTITION);
-                assert.equal(sets.test.length, length - (length * test.trainer.PARTITION));
+                assert.equal(sets.testing.length, length - (length * test.trainer.PARTITION));
             });
 
             it('should split the data 0 100 when the partion is 1', function(){
@@ -207,7 +280,7 @@ module.exports = function(callback){
                     sets = setData(length);
 
                 assert.equal(sets.training.length, 100);
-                assert.equal(sets.test.length, 0);
+                assert.equal(sets.testing.length, 0);
             });
 
             it('should split the data 100 0 when the partion is 0', function(){
@@ -217,7 +290,7 @@ module.exports = function(callback){
                     sets = setData(length);
 
                 assert.equal(sets.training.length, 0);
-                assert.equal(sets.test.length, 100);
+                assert.equal(sets.testing.length, 100);
             });
         });
 
@@ -260,14 +333,15 @@ module.exports = function(callback){
             })
 
             it('should throw an error when the training data is not in the correct format (see function)', function(){
-                helper.ENUTest(function(training){
+                (function run(training){
                     expect(function(){
                         test.trainer.runNetwork(training);
                     }).to.throw(messages.training.wrongTrainingDataFormat());
 
                     assert.isFalse(test.neuralNetwork.called);
-                })({})
-                (['test'])
+
+                    return run;
+                })(['test'])
                 ([[ 'test' ]])
                 ([[ [0],'test' ]]);
             });

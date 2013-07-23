@@ -18,7 +18,7 @@ var FILES = {
     networkNumber: 5
 }
 var sendFiles = {
-    combinedData: ['data/function_data/combined.json', true],
+    combinedData: [FILES.statistics, true],
     neuralNetwork: ['data/neural_networks/trained.json', true]
 }
 
@@ -56,13 +56,16 @@ module.exports = function(){
         function createTestData(callback){
             createStatisticFile(function(){
                 var train = new Train(sendFiles);
+
+
+
                 train.train(function(){
                     if (callback) return callback(train);
                 });
             });
         }
 
-        // Uses the statistics provided here to make the file. (Need to test whole training process)
+        // Uses the statistics provided here to make the file. (Need to test whole training process).
         function createStatisticFile(callback){
             var dir = FILES.statistics.split('/');
                 dir.pop();
@@ -78,7 +81,7 @@ module.exports = function(){
             });
         }
 
-        // Retrieves the created neural Networks data and passes a JS object it as the first argument to the sent callback
+        // Retrieves the created neural Networks data and passes a JS object it as the first argument to the sent callback.
         function getNeuralNetworkData(callback, index, networkData){
             index = index || 0;
             networkData = networkData || [];
