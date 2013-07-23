@@ -3,7 +3,8 @@ var _ = require('lodash'),
     assert = chai.assert,
     expect = chai.expect,
     sinon = require('sinon'),
-    stub = sinon.stub;
+    stub = sinon.stub,
+    fs = require('fs');
 
 var helper = new require('../test_helpers.js')(),
     messages = new require('../../messages.js')(),
@@ -17,8 +18,10 @@ module.exports = function(callback){
             test = {};
 
             test.neuralNetworkFile = 'test.json';
+            test.combinedDataFile = 'test2.json';
             test.trainer = new Trainer({
-                neuralNetwork: [test.neuralNetworkFile, true]
+                neuralNetwork: [test.neuralNetworkFile, true],
+                combinedData: [test.combinedDataFile, true]
             });
         });
 
@@ -47,6 +50,66 @@ module.exports = function(callback){
                 [t.SAVE_NETWORKS, t.PRINT_DATA_STATS, t.PRINT_FANN_OUTPUT, t.PRINT_NETWORK_STATS].forEach(function(variable){
                     assert.isTrue(_.isBoolean(variable));
                 });
+            });
+        });
+
+        describe('#train()', function(){
+            function prepareData(print, data){
+                messages.training.print = print;
+                test.readFile.callsArg(2);
+                test.parse.returns(data);
+            }
+
+            beforeEach(function(){
+                test.callback = stub();
+                test.readFile = stub(fs, 'readFile');
+                test.parse = stub(JSON, 'parse');
+                test.runTraining = stub(test.trainer, 'runTraining');
+                test.yesNoStats = stub(messages.training, 'yesNoStats');
+                test.yesNoStats.returns({send: function(){} });
+
+                messages.training.print = false;
+            });
+
+            afterEach(function(){
+                test.readFile.restore();
+                test.parse.restore();
+                test.yesNoStats.restore();
+                test.runTraining.restore();
+            });
+
+            it('should call readFile with the combinedData in utf8 format', function(){
+                test.trainer.train();
+
+                assert.isTrue(fs.readFile.calledOnce);
+                assert.isTrue(fs.readFile.calledWith(test.combinedDataFile, 'utf8'))
+            });
+
+            it('should call yesNoStats with the number of all 0s when there is no data points', function(){
+                prepareData(true, []);
+
+                test.trainer.train();
+                assert.isTrue(test.yesNoStats.calledWith(0, 0, 0));
+            });
+
+            it('should call yesNoStats with the number of valid invalid and total number of data points', function(){
+                prepareData(true, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
+
+                test.trainer.train();
+
+                assert.isTrue(test.yesNoStats.calledOnce);
+                assert.isTrue(test.yesNoStats.calledWith(2, 1, 3));
+            });
+
+            it('should call runTraining with the data retrieved from file and the callback as arguments', function(){
+                var data = [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}];
+                prepareData(false, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
+
+                test.trainer.train(test.callback);
+
+                assert.isFalse(test.yesNoStats.called);
+                assert.isTrue(test.runTraining.calledOnce);
+                assert.isTrue(test.runTraining.calledWith(data, test.callback));
             });
         });
 

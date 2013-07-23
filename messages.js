@@ -89,10 +89,16 @@ messages.generation = messages.create({
 });
 
 messages.training = messages.create({
+    yesNoStats: function(yes, no, dataLength){
+        return this.form("Yes:No: " + yes + ":" + no +
+                         "\nYes:No Percentage: " + yes/dataLength + ":" + no/dataLength +
+                         "\nNumber of Data Points: " + dataLength);
+    },
+
     averageStats: function(networks, totalSuccess){
         return this.form('\n' + networks + ' Accuracy: ' + totalSuccess[0]/networks +
-                  '\nPrecision: ' + totalSuccess[1]/networks +
-                  '\nNegatives Rate: ' + totalSuccess[2]/networks + '\n');
+                         '\nPrecision: ' + totalSuccess[1]/networks +
+                         '\nNegatives Rate: ' + totalSuccess[2]/networks + '\n');
     },
 
     filesNotSpecified: messages.generation.filesNotSpecified,

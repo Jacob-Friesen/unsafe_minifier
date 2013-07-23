@@ -26,25 +26,22 @@ module.exports = function Trainer(files){
 
     var _this = this;
     
+    // Trains the network by fetching the file contained in combinedData
     this.train = function(callback){
-        console.log('\ntraining data...');
-
-        // get function statistics
         fs.readFile(files.combinedData[0], 'utf8', function (err, data) {
             if (err) throw err;
             var combinedData = JSON.parse(data);
             
-            // Look at data representation
-            if (_this.PRINT_DATA_STATS){
-                var yes = 0;
-                var no = 0;
+            // Give a representation of valid to invalids (yes/no's)
+            if (messages.training.print){
+                var yes = 0,
+                    no = 0;
                 combinedData.forEach(function(dataPoint){
                     if (dataPoint.valid === 'yes') yes += 1;
                     else no += 1;
                 });
-                console.log("Yes's:No's: " + yes + ":" + no);
-                console.log("Yes:No Percentage: " + yes/combinedData.length + ":" + no/combinedData.length);
-                console.log("Number of Data Points: " + combinedData.length);
+
+                messages.training.yesNoStats(yes, no, combinedData.length).send();
             }
             
             _this.runTraining(combinedData, callback);
