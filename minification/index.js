@@ -12,7 +12,6 @@ var Training = require('../training');
 var NeuralNetwork = require('../training/neural_network.js');
 
 var PRINT_MERGES = true;// Print functions merged
-var NETWORKS = 5;// Number of networks to use when deciding
 
 // Handles Minifying the code
 module.exports = function Minification(files){
@@ -20,6 +19,8 @@ module.exports = function Minification(files){
         throw('Error: files must be specified in main.js.');
     var _this = this;
     var training = new Training(files);
+
+    this.NETWORKS = 5;// Number of networks to use when deciding
     
     // object decides whether a function can be merged, sent through merge functions to be used.
     var mergeDecider = {
@@ -48,6 +49,7 @@ module.exports = function Minification(files){
         this.loadNetworks(function(neuralNetworks){
             mergeDecider.networks = neuralNetworks;
             
+            console.log('found networks');
             return fs.readFile(file, 'utf8', function (err, data) {
                 if (err) throw err;
                 
@@ -86,8 +88,7 @@ module.exports = function Minification(files){
     
     // Loads the network data from 5 nueral networks constructing a nueral network from their data. Sends the retrieved networks in the callback
     this.loadNetworks = function(callback){
-        (function read(toRead, networks){
-            
+        (function read(toRead, networks){            
             var file = files.neuralNetwork[0].replace('.json',toRead + '.json');
             return fs.readFile(file, 'utf8', function (err, data) {
                 if (err) throw err;
@@ -103,7 +104,7 @@ module.exports = function Minification(files){
                 else
                     return callback(networks);
             });
-        })(NETWORKS - 1, []);
+        })(this.NETWORKS - 1, []);
     };
     
     return this;

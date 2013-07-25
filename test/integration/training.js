@@ -22,36 +22,8 @@ var sendFiles = {
     neuralNetwork: ['data/neural_networks/trained.json', true]
 }
 
-// REMEMBER TO MAKE .and pattern NPM module
 module.exports = function(){
     describe('Training Tests', function(){
-
-        before(function(done){
-            createTestData(function(train){
-                test.train = train;
-
-                getNeuralNetworkData(function(networkData){
-                    test.networkData = networkData;
-
-                    done();
-                }, test.train.NETWORKS);
-            });
-        });
-
-        after(function(done){
-            fs.unlink(FILES.statistics, function (err) {
-                if (err) throw err;
-
-                var dir = FILES.statistics.split('/');
-                    dir.pop();
-                    dir = dir.join().replace(/,/g,'/');
-                fs.rmdir(dir, function (err) {
-                    if (err) throw err;
-                    done();
-                });
-            });
-        })
-
         // Get all the data for testing by opening the specified test and verification directories and reading files in there.
         function createTestData(callback){
             createStatisticFile(function(){
@@ -97,6 +69,32 @@ module.exports = function(){
             else
                 callback(networkData);
         }
+
+        before(function(done){
+            createTestData(function(train){
+                test.train = train;
+
+                getNeuralNetworkData(function(networkData){
+                    test.networkData = networkData;
+
+                    done();
+                }, test.train.NETWORKS);
+            });
+        });
+
+        after(function(done){
+            fs.unlink(FILES.statistics, function (err) {
+                if (err) throw err;
+
+                var dir = FILES.statistics.split('/');
+                    dir.pop();
+                    dir = dir.join().replace(/,/g,'/');
+                fs.rmdir(dir, function (err) {
+                    if (err) throw err;
+                    done();
+                });
+            });
+        })
 
         it('Should generate networks with as many weights as layers defined except for the output', function(){
             test.networkData.forEach(function(network){

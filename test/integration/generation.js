@@ -17,16 +17,10 @@ var COMMENT_MARK = 'test:';// Where verification comments are, stripped out of v
 
 module.exports = function(){
     describe('Generation Tests', function(){
-        var comments = null;
-        var verifyFiles = null;
+        var comments = null,
+            verifyFiles = null;
 
-        before(function(done){
-            getData(done);
-        })
-
-        it('Must have an non-empty it() to trigger test runs', function(){});
-
-        // Get all the data for testing by opening the specified test and verification directories and reading files in there.
+                // Get all the data for testing by opening the specified test and verification directories and reading files in there.
         function getData(callback){
             // Get all the test files
             var filenames = fs.readdirSync(tests);
@@ -91,6 +85,11 @@ module.exports = function(){
             return string.replace(/[\n\r\t ]/g, "");
         }
 
+        before(function(done){
+            getData(done);
+        })
+
+        it('Must have an non-empty it() to trigger test runs', function(){});
     });
 
     return this;

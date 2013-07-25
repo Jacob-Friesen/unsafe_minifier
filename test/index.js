@@ -31,7 +31,8 @@ function integrationTests(){
 	if (_.contains(process.argv, '---i')){
 		[
 			'./integration/generation',
-			'./integration/training'
+			'./integration/training',
+			'./integration/minification'
 		].forEach(function(file){
 			require(file)();
 		});
