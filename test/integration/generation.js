@@ -7,7 +7,7 @@ var fs = require('fs'),
     assert = chai.assert,
     expect = chai.expect;
 
-var main = require('fs');
+var messages = new require('../../messages')();
 
 var tests = 'data/raw_data',
     verification = 'data/merged_data',
@@ -20,7 +20,7 @@ module.exports = function(){
         var comments = null,
             verifyFiles = null;
 
-                // Get all the data for testing by opening the specified test and verification directories and reading files in there.
+        // Get all the data for testing by opening the specified test and verification directories and reading files in there.
         function getData(callback){
             // Get all the test files
             var filenames = fs.readdirSync(tests);
@@ -86,7 +86,15 @@ module.exports = function(){
         }
 
         before(function(done){
+            messages.generation.print = false;
+            messages.merging.print = false;
+
             getData(done);
+        })
+
+        after(function(){
+            messages.generation.print = true;
+            messages.merging.print = false;
         })
 
         it('Must have an non-empty it() to trigger test runs', function(){});

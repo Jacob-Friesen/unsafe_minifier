@@ -4,37 +4,37 @@ var _ = require('lodash');
 
 // Unit
 if (_.contains(process.argv, '---u')){
-	var units = [
-		'./utility_functions_test',
-		'./messages_test',
-	    './AST_modification/return_handler_test',
-	    './AST_modification/merge_function_test',
-	    './AST_modification/merge_functions_test',
-	    './generation/function_statistics_test',
-	    './generation/index_test',
-	    './training/neural_network_test',
-	    './training/index_test'
-	]
+    var units = [
+        './utility_functions_test',
+        './messages_test',
+        './AST_modification/return_handler_test',
+        './AST_modification/merge_function_test',
+        './AST_modification/merge_functions_test',
+        './generation/function_statistics_test',
+        './generation/index_test',
+        './training/neural_network_test',
+        './training/index_test'
+    ]
 
-	units.forEach(function(file){
-		require(file)(function(){
-			if (file === _.last(units)) integrationTests();
-		});
-	});
+    units.forEach(function(file){
+        require(file)(function(){
+            if (file === _.last(units)) integrationTests();
+        });
+    });
 }
 else
-	integrationTests();
+    integrationTests();
 
 
 // Integration
 function integrationTests(){
-	if (_.contains(process.argv, '---i')){
-		[
-			'./integration/generation',
-			'./integration/training',
-			'./integration/minification'
-		].forEach(function(file){
-			require(file)();
-		});
-	}
+    if (_.contains(process.argv, '---i')){
+        [
+            './integration/generation',
+            './integration/training',
+            './integration/minification'
+        ].forEach(function(file){
+            require(file)();
+        });
+    }
 }

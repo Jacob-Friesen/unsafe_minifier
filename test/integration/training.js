@@ -6,7 +6,7 @@ var _ = require('lodash'),
     assert = chai.assert,
     expect = chai.expect;
 
-var main = require('fs');
+var messages = new require('../../messages')();
 
 var tests = 'data/raw_data',
     verification = 'data/merged_data',
@@ -28,8 +28,6 @@ module.exports = function(){
         function createTestData(callback){
             createStatisticFile(function(){
                 var train = new Train(sendFiles);
-
-
 
                 train.train(function(){
                     if (callback) return callback(train);
@@ -71,6 +69,8 @@ module.exports = function(){
         }
 
         before(function(done){
+            messages.training.print = false;
+
             createTestData(function(train){
                 test.train = train;
 
@@ -83,6 +83,8 @@ module.exports = function(){
         });
 
         after(function(done){
+            messages.training.print = true;
+
             fs.unlink(FILES.statistics, function (err) {
                 if (err) throw err;
 
