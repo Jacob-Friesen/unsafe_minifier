@@ -1,26 +1,28 @@
-var fs = require('fs');
-var esprima = require("esprima");
-var escodegen = require("escodegen");
-var fann = require('node_fann');
-// For using command line
-var sys = require('sys')
-var exec = require('child_process').exec;
+var fs = require('fs'),
+    esprima = require("esprima"),
+    escodegen = require("escodegen"),
+    fann = require('node_fann'),
+    exec = require('child_process').exec;
 
-var u = require('../utility_functions.js');
-var mergeFunctions = require('../AST_modification/merge_functions');
-var Training = require('../training');
-var NeuralNetwork = require('../training/neural_network.js');
+var u = require('../utility_functions.js'),
+    mergeFunctions = require('../AST_modification/merge_functions'),
+    Training = require('../training'),
+    NeuralNetwork = require('../training/neural_network.js');
 
-var PRINT_MERGES = true;// Print functions merged
-
-// Handles Minifying the code
+// Handles Minifying the code. Reads the file and neural network data to parse through it and apply appropriate transformations. The results are
+// in three output files:
+// <filename>.min.js: file with just the unsafe minifications applied
+// <filename>.safe.min.js: file with just the safe (external library) minifications applied
+// <filename>.full.min.js: file with the unsafe minifications applied, then the safe ones
 module.exports = function Minification(files){
-    if (u.nullOrUndefined(files))
-        throw('Error: files must be specified in main.js.');
-    var _this = this;
-    var training = new Training(files);
+    if (u.enu(files))
+        messages.minification.filesNotSpecified().error();
 
+    var _this = this;
+
+    this.Training = Training;
     this.NETWORKS = 5;// Number of networks to use when deciding
+    this.PRINT_MERGES = true;// Print functions merged when that state is reached
     
     // object decides whether a function can be merged, sent through merge functions to be used.
     var mergeDecider = {
@@ -28,7 +30,8 @@ module.exports = function Minification(files){
         
         // Use all the networks to come to a consensus on the whether a function should be minified
         canMerge: function(statistics){
-            var data = training.formatDataPoint(statistics);
+            var training = new Training(files),
+                data = training.formatDataPoint(statistics);
             
             var networkTotal = 0;
             this.networks.forEach(function(network){
@@ -81,7 +84,7 @@ module.exports = function Minification(files){
                             });
                         });
                     });
-                }, mergeDecider, PRINT_MERGES); 
+                }, mergeDecider, _this.PRINT_MERGES); 
             });
         });
     };

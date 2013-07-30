@@ -13,7 +13,8 @@ if (_.contains(process.argv, '---u')){
         './generation/function_statistics_test',
         './generation/index_test',
         './training/neural_network_test',
-        './training/index_test'
+        './training/index_test',
+        './minification/index_test'
     ]
 
     units.forEach(function(file){

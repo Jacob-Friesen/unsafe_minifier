@@ -138,6 +138,10 @@ messages.training = messages.create({
     }
 });
 
+messages.minification = messages.create({
+    filesNotSpecified: messages.generation.filesNotSpecified
+});
+
 messages.utility = messages.create({
     fileNoParse: function(file){
         return this.form('Error: The file could not be parsed:\n' + file);
