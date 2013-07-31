@@ -139,7 +139,11 @@ messages.training = messages.create({
 });
 
 messages.minification = messages.create({
-    filesNotSpecified: messages.generation.filesNotSpecified
+    filesNotSpecified: messages.generation.filesNotSpecified,
+
+    loadedNetwork: function(file){
+        return this.form('loaded network from ' + file);
+    }
 });
 
 messages.utility = messages.create({

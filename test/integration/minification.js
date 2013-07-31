@@ -14,15 +14,18 @@ module.exports = function(){
             fs.writeFile(data.toMergeFile, data.toMerge, function (err) {
                 if (err) throw(err);
 
-                fs.mkdir(data.neuralNetworkDir, function(err){
-                    if (err) throw(err);
+                if (!fs.existsSync(data.neuralNetworkDir))
+                    fs.mkdirSync(data.neuralNetworkDir);
 
-                    fs.writeFile(data.neuralNetworkFile, JSON.stringify(data.neuralNetwork), function (err) {
-                        if (err) throw(err);
-                        callback();
-                    });
+                fs.writeFile(data.neuralNetworkFile, JSON.stringify(data.neuralNetwork), function (err) {
+                    if (err) throw(err);
+                    callback();
                 });
             });
+        }
+
+        function createRestOfTestData(callback){
+            callback();
         }
 
         function fileContentsEqual(file, contents, callback){
