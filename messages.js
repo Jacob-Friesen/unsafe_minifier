@@ -141,6 +141,18 @@ messages.training = messages.create({
 messages.minification = messages.create({
     filesNotSpecified: messages.generation.filesNotSpecified,
 
+    writtenUnsafe: function(file){
+        return this.form('Unsafely minified file has been written to ' + file);
+    },
+
+    writtenFull: function(file){
+        return this.form('Fully minified file has been written to ' + file);
+    },
+
+    writtenSafe: function(file){
+        return this.form('Safely minified file has been written to ' + file + '\n');
+    },
+
     loadedNetwork: function(file){
         return this.form('loaded network from ' + file);
     }

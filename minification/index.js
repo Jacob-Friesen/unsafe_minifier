@@ -2,7 +2,7 @@ var fs = require('fs'),
     esprima = require("esprima"),
     escodegen = require("escodegen"),
     fann = require('node_fann'),
-    exec = require('child_process').exec;
+    child_process = require('child_process');
 
 var u = require('../utility_functions.js'),
     mergeFunctions = require('../AST_modification/merge_functions'),
@@ -37,8 +37,7 @@ module.exports = function Minification(files){
             
             var networkTotal = 0;
             this.networks.forEach(function(network){
-                networkTotal += network.getResultOf(data[0])
-                //console.log(networkTotal);
+                networkTotal += network.getResultOf(data[0]);
             });
             
             if (networkTotal > this.networks.length/2)
@@ -63,34 +62,54 @@ module.exports = function Minification(files){
                 for (_file in files)
                     new_files[_file] = files[_file][0];
                 
-                // Merge all the functions in toMinify using the merge decider to decide if the file can be minified.
-                var merge = new mergeFunctions(new_files, esprima.parse(data, {loc: true, comment: true}));
-                return merge.merge(toMinify, function(AST){
-                    var newFile = toMinify.replace('.js', '.min.js'); 
-                    
-                    fs.writeFile(newFile, escodegen.generate(AST), function (err) {
-                        if (err) throw err;
-                        console.log('AI merged file has been written to ' + newFile);
-                        
-                        var finalFile = toMinify.replace('.js','.full.min.js') 
-                        exec('java -jar safe_minifier/compiler.jar --js='+newFile+' --js_output_file='+finalFile, function(err){
-                            if (err) throw(err);
-                            console.log('Fully merged file has been written to ' + finalFile);
-                            
-                            var safeFile = toMinify.replace('.js','.safe.min.js') 
-                            exec('java -jar safe_minifier/compiler.jar --js='+toMinify+' --js_output_file='+safeFile, function(err){
-                                if (err) throw(err);
-                                console.log('Safely minified file has been written to ' + safeFile + '\n');
-                                
-                                if (callback) callback();
-                            });
-                        });
-                    });
-                }, mergeDecider, _this.PRINT_MERGES); 
+                _this.doMerges(toMinify, data, new_files, callback);
             });
         });
     };
+
+    // Merge all the functions in toMinify using the merge decider to decide if the file can be minified. Then write all the minified versions of the
+    // files as described at the top of this file.
+    this.doMerges = function(toMinify, toMinifyData, files, callback){
+        var merge = new mergeFunctions(files, esprima.parse(toMinifyData, {loc: true, comment: true}));
+
+        console.log('toMinify', toMinify);
+        return merge.merge(toMinify, function(AST){
+            _this.writeMinifiedFiles(toMinify, AST, callback);
+        }, mergeDecider, _this.PRINT_MERGES); 
+    }
     
+    // Write all the minified versions of the files as described at the top of this file.
+    this.writeMinifiedFiles = (function(toMinify, AST, callback){
+        var unsafeMinified = toMinify.replace('.js', '.min.js');
+
+        fs.writeFile(unsafeMinified, escodegen.generate(AST), function(err) {
+            if (err) throw err;
+            messages.minification.writtenUnsafe(unsafeMinified).send();
+            
+            var fullyMinified = toMinify.replace('.js','.full.min.js');
+            child_process.exec('java -jar safe_minifier/compiler.jar --js='+unsafeMinified+' --js_output_file='+fullyMinified, function(err){
+                if (err) throw(err);
+                messages.minification.writtenFull(fullyMinified).send();
+                
+                var safeFile = toMinify.replace('.js','.safe.min.js');
+                child_process.exec('java -jar safe_minifier/compiler.jar --js='+toMinify+' --js_output_file='+safeFile, function(err){
+                    if (err) throw(err);
+                    messages.minification.writtenSafe(safeFile).send();
+                    
+                    if (callback) callback();
+                });
+            });
+        });
+    }).defaultsWith(u.enu, '', {
+        "type": "Program",
+        "body": [
+            {
+                "type": "BlockStatement",
+                "body": []
+            }
+        ]
+    });
+
     // Loads the network data from NETWORKS nueral networks constructing a neural network from their data. It get the file names by appending the
     // current index down from NETWORKS to 0 to the neuralNetworkFile. Sends the retrieved networks as an array in the callback.
     this.loadNetworks = function(neuralNetworkFile, callback){

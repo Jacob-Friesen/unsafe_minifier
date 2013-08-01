@@ -4,7 +4,8 @@ var _ = require('lodash'),
     expect = chai.expect
     sinon = require('sinon'),
     stub = sinon.stub,
-    fs = require('fs');
+    fs = require('fs'),
+    child_process = require('child_process');
 
 var helper = new require('../test_helpers.js')(),
     messages = new require('../../messages.js')(),
@@ -157,6 +158,133 @@ module.exports = function(callback){
 
                 assert.equal(test.callback.callCount, 1);
                 assert.isTrue(test.callback.calledWith(newWrappers));
+            });
+        });
+
+        describe('#writeMinifiedFiles()', function(){
+            function setupExec(){
+                test.writeFile.callsArgWith(2, false);
+                test.exec.callsArgWith(1, false);
+            }
+
+            function setupMessage(messageObject){
+                test[messageObject] = stub(messages.minification, messageObject);
+                test[messageObject].returns({send: function(){} });
+            }
+
+            beforeEach(function(){
+                messages.minification.print = false;
+
+                test.writeFile = stub(fs, 'writeFile');
+                test.exec = stub(child_process, 'exec');
+
+                test.aIsB = {// (a = b) is Mozilla parser syntax
+                    "type": "Program",
+                    "body": [
+                        {
+                            "type": "ExpressionStatement",
+                            "expression": {
+                                "type": "AssignmentExpression",
+                                "operator": "=",
+                                "left": {
+                                    "type": "Identifier",
+                                    "name": "a"
+                                },
+                                "right": {
+                                    "type": "Identifier",
+                                    "name": "b"
+                                }
+                            }
+                        }
+                    ]
+                }
+            });
+
+            afterEach(function(){
+                messages.minification.print = true;
+
+                test.writeFile.restore();
+                test.exec.restore();
+            });
+
+            it('should send in an empty filename and AST to the first writeFile if toMinify or AST or enu', function(){
+                helper.dualNullUndefinedTest(function(toMinify, AST){
+                    test.minification.writeMinifiedFiles(toMinify, AST);
+
+                    assert.isTrue(test.writeFile.calledOnce);
+                    assert.isTrue(test.writeFile.calledWith('', '{\n}'));
+                    test.writeFile.callCount -= 1;
+                })('', []);
+            });
+
+            it('should send in the file name with .js replace with .min.js and the AST parsed', function(){
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.writeFile.calledOnce);
+                assert.isTrue(test.writeFile.calledWith('test.min.js', 'a = b;'));
+            });
+
+            it('should send a message explaining the first file has been unsafely minified and written', function(){
+                test.writeFile.callsArgWith(2, false);
+                setupMessage('writtenUnsafe');
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.writtenUnsafe.calledOnce);
+                assert.isTrue(test.writtenUnsafe.calledWith('test.min.js'));
+
+                test.writtenUnsafe.restore();
+            });
+
+            it('should run the unsafely minified file through the safe minifier with extension .full.min.js', function(){
+                test.writeFile.callsArgWith(2, false);
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.exec.calledOnce);
+                assert.isTrue(test.exec.calledWith('java -jar safe_minifier/compiler.jar --js=test.min.js --js_output_file=test.full.min.js'));
+            });
+
+            it('should send a message explaining the first file has been fully minified and written', function(){
+                setupExec();
+                setupMessage('writtenFull');
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.writtenFull.calledOnce);
+                assert.isTrue(test.writtenFull.calledWith('test.full.min.js'));
+
+                test.writtenFull.restore();
+            });
+
+            it('should run the first file through the safe minifier with extension .safe.min.js', function(){
+                setupExec();
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.exec.calledTwice);
+                assert.isTrue(test.exec.calledWith('java -jar safe_minifier/compiler.jar --js=test.js --js_output_file=test.safe.min.js'));
+            });
+
+            it('should send a message explaining the first file has been fully minified and written', function(){
+                setupExec();
+                setupMessage('writtenSafe');
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB);
+
+                assert.isTrue(test.writtenSafe.calledOnce);
+                assert.isTrue(test.writtenSafe.calledWith('test.safe.min.js'));
+
+                test.writtenSafe.restore();
+            });
+
+            it('should call the callback sent in after everything', function(){
+                setupExec();
+                test.callback = stub();
+
+                test.minification.writeMinifiedFiles('test.js', test.aIsB, test.callback);
+
+                assert.isTrue(test.callback.calledOnce);
             });
         });
     });
