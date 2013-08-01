@@ -5,8 +5,8 @@ var fs = require('fs'),
     child_process = require('child_process');
 
 var u = require('../utility_functions.js'),
-    mergeFunctions = require('../AST_modification/merge_functions'),
     messages = new require('../messages.js')(),
+    MergeFunctions = require('../AST_modification/merge_functions'),
     Training = require('../training'),
     NeuralNetwork = require('../training/neural_network.js');
 
@@ -23,11 +23,12 @@ module.exports = function Minification(files){
 
     this.Training = Training;
     this.NeuralNetwork = NeuralNetwork;
+    this.MergeFunctions = MergeFunctions;
     this.NETWORKS = 5;// Number of networks to use when deciding
     this.PRINT_MERGES = true;// Print functions merged when that state is reached
     
     // object decides whether a function can be merged, sent through merge functions to be used.
-    var mergeDecider = {
+    this.mergeDecider = {
         networks: [],
         
         // Use all the networks to come to a consensus on the whether a function should be minified
@@ -51,7 +52,7 @@ module.exports = function Minification(files){
         console.log('\nminifying file...');
         
         this.loadNetworks(files.neuralNetwork[0], function(neuralNetworks){
-            mergeDecider.networks = neuralNetworks;
+            _this.mergeDecider.networks = neuralNetworks;
             
             console.log('found networks');
             return fs.readFile(toMinify, 'utf8', function (err, data) {
@@ -69,14 +70,13 @@ module.exports = function Minification(files){
 
     // Merge all the functions in toMinify using the merge decider to decide if the file can be minified. Then write all the minified versions of the
     // files as described at the top of this file.
-    this.doMerges = function(toMinify, toMinifyData, files, callback){
-        var merge = new mergeFunctions(files, esprima.parse(toMinifyData, {loc: true, comment: true}));
+    this.doMerges = (function(toMinify, toMinifyData, files, callback){
+        var merge = new _this.MergeFunctions(files, esprima.parse(toMinifyData, {loc: true, comment: true}));
 
-        console.log('toMinify', toMinify);
         return merge.merge(toMinify, function(AST){
             _this.writeMinifiedFiles(toMinify, AST, callback);
-        }, mergeDecider, _this.PRINT_MERGES); 
-    }
+        }, _this.mergeDecider, _this.PRINT_MERGES); 
+    }).defaultsWith(u.nullOrUndefined, '', '');
     
     // Write all the minified versions of the files as described at the top of this file.
     this.writeMinifiedFiles = (function(toMinify, AST, callback){
