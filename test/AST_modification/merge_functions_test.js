@@ -96,6 +96,17 @@ module.exports = function(callback){
                 mergeFunctions.functionDeclarations = test.functionDecs;
             }
 
+            function createNetworkWith(returns){
+                var index = -1;
+
+                return {
+                    canMerge: function(){
+                        index += 1;
+                        return returns[index]; 
+                    }
+                }
+            }
+
             beforeEach(function(){
                 messages.merging.print = false;
 
@@ -185,7 +196,7 @@ module.exports = function(callback){
                 assert.isFalse(test.merge.called);
             });
 
-            it('should merge 2 functions and add their statistics if they are in the correct separation distance', function(){
+            it('should merge 1 function and add its statistics if it is in the correct separation distance', function(){
                 test.add = spy(mergeFunctions.functionStatistics, 'add');
                 test.merge = spy(mergeFunctions.mergeFunction, 'merge');
 
@@ -213,7 +224,7 @@ module.exports = function(callback){
             });
 
             // e.g. line numbers: 0, 0 + MAX_SEPERATION, MAX_SEPERATION + MAX_SEPERATION
-            it('should merge 3 functions and add their statistics if they are in the correct seperation distance from each other', function(){
+            it('should merge 2 functions and add their statistics if they are in the correct seperation distance from each other', function(){
                 prepareFor3Merges();
 
                 mergeFunctions.combineFunctions(null);
@@ -228,6 +239,33 @@ module.exports = function(callback){
                 assert.notDeepEqual(mergeFunctions.functionCalls[1], test.originalCalls[1]);
                 assert.notDeepEqual(mergeFunctions.functionDeclarations[0], test.originalDecs[0]);
                 assert.notDeepEqual(mergeFunctions.functionDeclarations[1], test.originalDecs[1]);
+            });
+
+            it('should merge no functions, but still add their statistics if the previous, but the network indicates they can\'t merge', function(){
+                prepareFor3Merges();
+
+                mergeFunctions.combineFunctions(createNetworkWith([false, false]));
+
+                assert.isTrue(test.add.calledTwice);
+                assert.isFalse(test.merge.called);
+            });
+
+            it('should merge 2 functions and add their statistics if the previous, but the network indicates they all can merge', function(){
+                prepareFor3Merges();
+
+                mergeFunctions.combineFunctions(createNetworkWith([true, true]));
+
+                assert.isTrue(test.add.calledTwice);
+                assert.isTrue(test.merge.calledTwice);
+            });
+
+            it('should merge 1 functions and 2 functions statistics if the previous, but the network indicates one can merge', function(){
+                prepareFor3Merges();
+
+                mergeFunctions.combineFunctions(createNetworkWith([true, false]));
+
+                assert.isTrue(test.add.calledTwice);
+                assert.isTrue(test.merge.calledOnce);
             });
 
             it('should print each of the merges and the total number of merges with the previous conditions if printMerges is true', function(){
@@ -254,8 +292,6 @@ module.exports = function(callback){
 
                 assert.isTrue(test.print.calledOnce);
             });
-
-            // Going to hold off on network tests until I am done testing the nueral network section.
         });
 
         describe('#trimFunctionCalls()', function(){

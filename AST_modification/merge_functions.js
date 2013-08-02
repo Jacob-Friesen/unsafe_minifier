@@ -299,7 +299,7 @@ module.exports = function MergeFunctions(files, AST){
     }
     
     // Decide when to minify similar functions and record data on minified functions, if a nueral network is present gathers statistics then sends
-    // them to its checking function.
+    // them to its checking function. The network object is defined in Minification/index.js.
     this.combineFunctions = function(network){
         // Redorder function calls by start location, descending. Any calls within short range of each other are candidates for merging.
         _this.functionCalls.sort(function(callX, callY) {
