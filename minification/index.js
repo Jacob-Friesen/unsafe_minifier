@@ -27,12 +27,16 @@ module.exports = function Minification(files){
     this.NETWORKS = 5;// Number of networks to use when deciding
     this.PRINT_MERGES = true;// Print functions merged when that state is reached
     
-    // object decides whether a function can be merged, sent through merge functions to be used.
+    // Object decides whether a function can be merged. This is sent through merge functions to be used.
     this.mergeDecider = {
+        // These will be the networks each functions statistics will be sent through to determine if they can be merged.
         networks: [],
         
-        // Use all the networks to come to a consensus on the whether a function should be minified
+        // Use all the networks to come to a consensus on the whether two functions should be minified based on thier statistics.
         canMerge: function(statistics){
+            if (_this.mergeDecider.networks.length < 1)
+                messages.minification.noNetworksForDecision().error();
+
             var training = new Training(files),
                 data = training.formatDataPoint(statistics);
             
@@ -47,7 +51,7 @@ module.exports = function Minification(files){
         }
     }
     
-    // load the network then use it to minify the file correctly (hopefully at least the ann is no 100% accurate)
+    // Load the network then use it to minify the file correctly (hopefully at least the ann is not 100% accurate)
     this.minifyFile = (function(toMinify, callback){
         // Makes new_file object equal to each file[0]
         var newFiles = {};

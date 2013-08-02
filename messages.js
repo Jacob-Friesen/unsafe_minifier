@@ -154,7 +154,11 @@ messages.minification = messages.create({
     },
 
     loadedNetwork: function(file){
-        return this.form('loaded network from ' + file);
+        return this.form('Loaded network from ' + file);
+    },
+
+    noNetworksForDecision: function(){
+        return this.form('Error: No networks have been specified in mergeDecider');
     }
 });
 

@@ -49,8 +49,69 @@ module.exports = function(callback){
             callback();
         });
 
-        describe('#minifyFile()', function(){
+        describe('#constructor()', function(){
+            it('should throw an error if the files sent in are enu', function(){
+                helper.ENUTest(function(files){
+                    expect(function(){
+                        new Minification(files);
+                    }).to.throw(messages.minification.filesNotSpecified());
+                });
+            });
 
+            it('should have the correct variables set', function(){
+                assert.deepEqual(MergeFunctions, test.minification.MergeFunctions);
+                assert.deepEqual(Training, test.minification.Training);
+                assert.deepEqual(NeuralNetwork, test.minification.NeuralNetwork);
+                assert.isNumber(test.minification.NETWORKS);
+                assert.isBoolean(test.minification.PRINT_MERGES);
+
+                assert.isObject(test.minification.mergeDecider);
+                assert.isFalse(_.isEmpty(test.minification.mergeDecider));
+            });
+        });
+
+        describe('#mergeDecider', function(){
+            it('should have a networks array', function(){
+                assert.isArray(test.minification.mergeDecider.networks);
+            });
+
+            // Going to use more direct tests (less stubbing) than usual at this high a level due to this functions importance
+            describe('#canMerge()', function(){
+                function network(returns){
+                    return {
+                        getResultOf: function(){ return returns; }
+                    }
+                }
+
+                it('should throw an error if there are no networks', function(){
+                    expect(function(){
+                        test.minification.mergeDecider.canMerge();
+                    }).to.throw(messages.minification.noNetworksForDecision());
+                });
+
+                it('should return false if there is one network and it gives a negative response', function(){
+                    test.minification.mergeDecider.networks = [network(0)];
+                    assert.isFalse(test.minification.mergeDecider.canMerge());
+                });
+
+                it('should return true if there is one network and it gives a positive response', function(){
+                    test.minification.mergeDecider.networks = [network(0.51)];
+                    assert.isTrue(test.minification.mergeDecider.canMerge());
+                });
+
+                it('should return false if there is a set of networks and they on average give negative responses', function(){
+                    test.minification.mergeDecider.networks = [network(0),network(1),network(0)];
+                    assert.isFalse(test.minification.mergeDecider.canMerge());
+                });
+
+                it('should return true if there is a set of networks and they on average give positive responses', function(){
+                    test.minification.mergeDecider.networks = [network(1),network(0),network(1)];
+                    assert.isTrue(test.minification.mergeDecider.canMerge());
+                });
+            });
+        });
+
+        describe('#minifyFile()', function(){
             beforeEach(function(){
                 test.loadNetworks = stub(test.minification, 'loadNetworks');
                 test.readFile = stub(fs, 'readFile');
@@ -113,24 +174,6 @@ module.exports = function(callback){
                 assert.isTrue(test.doMerges.calledWith('test.json', data, test.files, callback));
             });
 
-        });
-
-        describe('#constructor()', function(){
-            it('should throw an error if the files sent in are enu', function(){
-                helper.ENUTest(function(files){
-                    expect(function(){
-                        new Minification(files);
-                    }).to.throw(messages.minification.filesNotSpecified());
-                });
-            });
-
-            it('should have the correct variables set', function(){
-                assert.deepEqual(MergeFunctions, test.minification.MergeFunctions);
-                assert.deepEqual(Training, test.minification.Training);
-                assert.deepEqual(NeuralNetwork, test.minification.NeuralNetwork);
-                assert.isNumber(test.minification.NETWORKS);
-                assert.isBoolean(test.minification.PRINT_MERGES);
-            });
         });
 
         describe('#doMerges()', function(){
