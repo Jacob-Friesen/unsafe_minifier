@@ -20,8 +20,8 @@ module.exports = function(callback){
         beforeEach(function(){
             test = {};
 
-            test.files = { aFile: ''};
-            test.minification = new Minification({ aFile: test.files});
+            test.files = { neuralNetwork: ['neural.json', true] };
+            test.minification = new Minification(test.files);
 
             test.aIsB = {// (a = b) is Mozilla parser syntax
                 "type": "Program",
@@ -47,6 +47,72 @@ module.exports = function(callback){
 
         after(function(){
             callback();
+        });
+
+        describe('#minifyFile()', function(){
+
+            beforeEach(function(){
+                test.loadNetworks = stub(test.minification, 'loadNetworks');
+                test.readFile = stub(fs, 'readFile');
+                test.doMerges =stub(test.minification, 'doMerges');
+            });
+
+            afterEach(function(){
+                test.loadNetworks.restore();
+                test.readFile.restore();
+                test.doMerges.restore();
+            });
+
+            it('should send the neural network file specified in files to loadNetworks', function(){
+                test.minification.minifyFile();
+
+                assert.isTrue(test.loadNetworks.calledOnce);
+                assert.isTrue(test.loadNetworks.calledWith(test.files.neuralNetwork[0]));
+            });
+
+            it('should set the merge deciders networks to be the networks obtained from loadNetworks', function(){
+                var networks = ['a', 'set', 'of', 'networks'];// Network contents are irrelevant
+                test.loadNetworks.callsArgWith(1, networks);
+
+                test.minification.minifyFile();
+
+                assert.deepEqual(test.minification.mergeDecider.networks, networks);
+            });
+
+            it('should read an empty file if the file specified is null or undefined', function(){
+                test.loadNetworks.callsArgWith(1, []);
+
+                helper.nullUndefinedTest(function(toMinify){
+                    test.minification.minifyFile(toMinify);
+
+                    assert.isTrue(test.readFile.calledOnce);
+                    assert.isTrue(test.readFile.calledWith(''));
+                    test.readFile.callCount -= 1;
+                });
+            });
+
+            it('should read the file specified to minify in utf8 format', function(){
+                test.loadNetworks.callsArgWith(1, []);
+
+                test.minification.minifyFile('test.json');
+
+                assert.isTrue(test.readFile.calledOnce);
+                assert.isTrue(test.readFile.calledWith('test.json', 'utf8'));
+            });
+
+            it('should doMerges with the file to minify, the data obtained from that file, the updated files object and the callback', function(){
+                var data = {point: 'aPoint'},
+                    callback = stub();
+                test.loadNetworks.callsArgWith(1, []);
+                test.readFile.callsArgWith(2, false, data);
+
+                test.minification.minifyFile('test.json', callback);
+
+                test.files.neuralNetwork = test.files.neuralNetwork[0];
+                assert.isTrue(test.doMerges.calledOnce);
+                assert.isTrue(test.doMerges.calledWith('test.json', data, test.files, callback));
+            });
+
         });
 
         describe('#constructor()', function(){

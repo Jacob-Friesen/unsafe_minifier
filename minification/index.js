@@ -48,25 +48,22 @@ module.exports = function Minification(files){
     }
     
     // load the network then use it to minify the file correctly (hopefully at least the ann is no 100% accurate)
-    this.minifyFile = function(toMinify, callback){
-        console.log('\nminifying file...');
+    this.minifyFile = (function(toMinify, callback){
+        // Makes new_file object equal to each file[0]
+        var newFiles = {};
+        for (file in files)
+            newFiles[file] = files[file][0];
         
-        this.loadNetworks(files.neuralNetwork[0], function(neuralNetworks){
+        this.loadNetworks(newFiles.neuralNetwork, function(neuralNetworks){
             _this.mergeDecider.networks = neuralNetworks;
-            
-            console.log('found networks');
+
             return fs.readFile(toMinify, 'utf8', function (err, data) {
                 if (err) throw err;
                 
-                // Makes new_file object equal to each file[0]
-                var new_files = {};
-                for (_file in files)
-                    new_files[_file] = files[_file][0];
-                
-                _this.doMerges(toMinify, data, new_files, callback);
+                _this.doMerges(toMinify, data, newFiles, callback);
             });
         });
-    };
+    }).defaultsWith(u.nullOrUndefined, '');
 
     // Merge all the functions in toMinify using the merge decider to decide if the file can be minified. Then write all the minified versions of the
     // files as described at the top of this file.
