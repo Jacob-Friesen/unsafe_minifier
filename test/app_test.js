@@ -25,6 +25,13 @@ module.exports = function(callback){
                 assert.isObject(test.app.LOCS.files);
                 assert.isFalse(_.isEmpty(test.app.LOCS.files));
             });
+
+            it('should have a flag to function table with each value pointing to a function', function(){
+                for (flag in test.app.flagToFunction){
+                    assert.isString(flag);
+                    assert.isFunction(test.app.flagToFunction[flag]);
+                }
+            });
         });
 
     });

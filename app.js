@@ -46,6 +46,7 @@ function App(){
         minification.minifyFile(file);
     }
 
+    // Needs to be after the functions it references instead of at the beggining so the functions referenced are defined.
     this.flagToFunction = {
         '-g': this.generateTestData,
         '-generate': this.generateTestData,
