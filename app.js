@@ -6,12 +6,15 @@
 // -t/-train:    Train system on test data
 // -m/-minify:   Minify a file using the network trained
 
-var DataGeneration = require('./generation');
-var Training = require('./training');
-var Minification = require('./minification');
+var DataGeneration = require('./generation'),
+    Training = require('./training'),
+    Minification = require('./minification');
 
 function App(){
     var _this = this;
+
+    this.DataGeneration = DataGeneration;
+
     this.LOCS = {
         rawDataDirectory: 'data/raw_data',
         mergedDataDirectory: 'data/merged_data',
@@ -23,12 +26,9 @@ function App(){
         }
     };
 
-    this.generateTestData = function(callback){
-        console.log('\ngenerating data...');
-        
-        var generator = new DataGeneration(_this.LOCS.rawDataDirectory, _this.LOCS.mergedDataDirectory, _this.LOCS.files);
+    this.generateTrainingData = function(callback){
+        var generator = new this.DataGeneration(_this.LOCS.rawDataDirectory, _this.LOCS.mergedDataDirectory, _this.LOCS.files);
         generator.generateData(null, function(){
-            console.log('done generating data.\n');
             callback();
         });
     };
@@ -48,8 +48,8 @@ function App(){
 
     // Needs to be after the functions it references instead of at the beggining so the functions referenced are defined.
     this.flagToFunction = {
-        '-g': this.generateTestData,
-        '-generate': this.generateTestData,
+        '-g': this.generateTrainingData,
+        '-generate': this.generateTrainingData,
         '-t': this.trainSystem,
         '-train': this.trainSystem,
         '-m': this.minifyFile,
