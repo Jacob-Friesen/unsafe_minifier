@@ -63,6 +63,12 @@ Testing
 =======
 **To run all tests:** make test-all
 
+**Debugging Tests:** One debug listener for unit and integration tests
+ * Make sure to have [node-inspector](https://github.com/node-inspector/node-inspector) installed globally
+1. **Start the listener:** make test-d or make test-debug
+2. **Start the inspector:** node-inspector
+3. **Debug in Chrome:** Go to the listed page in Chrome (and only Chrome), probably [http://127.0.0.1:8080/debug?port=5858](http://127.0.0.1:8080/debug?port=5858)
+
 **Unit Tests:** Covers all lower level code.
  * **Run them once:** make test or make test-u or make test-unit
  * **Run them with every code change:** make test-w or make test-watch

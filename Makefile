@@ -36,4 +36,15 @@ test-all:
 		---i
 test-a: test-all
 
-.PHONY: test test-watch test-integration test-all
+test-debug:
+	@NODE_ENV=test ./node_modules/.bin/mocha \
+		--reporter $(REPORTER) \
+		--ui bdd \
+		--debug-brk \
+		test \
+		---u \
+		---i
+test-d: test-debug
+
+
+.PHONY: test test-watch test-integration test-all test-debug
