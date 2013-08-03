@@ -14,6 +14,8 @@ function App(){
     var _this = this;
 
     this.DataGeneration = DataGeneration;
+    this.Training = Training;
+    this.Minification = Minification;
 
     this.LOCS = {
         rawDataDirectory: 'data/raw_data',
@@ -28,13 +30,11 @@ function App(){
 
     this.generateTrainingData = function(callback){
         var generator = new this.DataGeneration(_this.LOCS.rawDataDirectory, _this.LOCS.mergedDataDirectory, _this.LOCS.files);
-        generator.generateData(null, function(){
-            callback();
-        });
+        generator.generateData(null, callback);
     };
 
     this.trainSystem = function(callback){
-        var training = new Training(_this.LOCS.files);
+        var training = new _this.Training(_this.LOCS.files);
         training.train(callback);
     };
 
@@ -42,7 +42,7 @@ function App(){
         if (typeof file === 'undefined')
             throw('Error: merging file must be specified');
             
-        var minification = new Minification(_this.LOCS.files);
+        var minification = new _this.Minification(_this.LOCS.files);
         minification.minifyFile(file);
     }
 

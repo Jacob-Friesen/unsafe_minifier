@@ -3,6 +3,9 @@ var _ = require('lodash'),
     assert = chai.assert;
 
 var u = require('../utility_functions.js'),
+    DataGeneration = require('../generation'),
+    Training = require('../training'),
+    Minification = require('../minification'),
     App = require('../app.js');
 
 // These tests only apply to in function/object relationships, they are not integration tests. There are near end to end integration tests in the 
@@ -34,9 +37,15 @@ module.exports = function(callback){
                     assert.isFunction(test.app.flagToFunction[flag]);
                 }
             });
+
+            it('should give the object versions of objects with constructors', function(){
+                assert.deepEqual(DataGeneration, test.app.DataGeneration);
+                assert.deepEqual(Training, test.app.Training);
+                assert.deepEqual(Minification, test.app.Minification);
+            });
         });
 
-        describe.only('#generateTrainingData()', function(){
+        describe('#generateTrainingData()', function(){
             beforeEach(function(){
                 test.DataGeneration = stub(test.app, 'DataGeneration');
 
@@ -57,20 +66,40 @@ module.exports = function(callback){
                 assert.isTrue(test.DataGeneration.calledWith(locs.rawDataDirectory, locs.mergedDataDirectory, locs.files));
             });
 
-            it('should call DataGeneration.generateData with null', function(){
-                test.app.generateTrainingData();
-
-                assert.isTrue(test.generateData.calledOnce);
-                assert.isTrue(test.generateData.calledWith(null));
-            });
-
-            it('should call the callback after generateData', function(){
+            it('should call DataGeneration.generateData with null and the callback', function(){
                 var callback = stub();
-                test.generateData.callsArg(1);
-
                 test.app.generateTrainingData(callback);
 
-                assert.isTrue(callback.calledOnce);
+                assert.isTrue(test.generateData.calledOnce);
+                assert.isTrue(test.generateData.calledWith(null, callback));
+            });
+        });
+
+        describe('#trainSystem()', function(){
+            beforeEach(function(){
+                test.Training = stub(test.app, 'Training');
+
+                test.train = stub();
+                test.Training.returns({train: test.train});
+            });
+
+            afterEach(function(){
+                test.Training.restore();
+            });
+
+            it('should call the Training constructor with the files', function(){
+                test.app.trainSystem();
+
+                assert.isTrue(test.Training.calledOnce);
+                assert.isTrue(test.Training.calledWith(test.app.LOCS.files));
+            });
+
+            it('should call DataGeneration.train with the callback', function(){
+                var callback = stub();
+                test.app.trainSystem(callback);
+
+                assert.isTrue(test.train.calledOnce);
+                assert.isTrue(test.train.calledWith(callback));
             });
         });
 
