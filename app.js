@@ -61,29 +61,24 @@ function App(){
     };
 
     // Currently just creates the test data
-    this.start = function(){
-        if (process.argv.length === 2 || process.argv[2] === '-h' || process.argv[2] === '-help'){
-            console.log('\nUsage: ' + process.argv[1].split('/').pop() + ' <flag>\n',
-                        'Flags:\n',
-                        '-h/help:      Display how to use program (your here currently)\n',
-                        '-g/-generate: Generate the test data\n',
-                        '-t/-train:    Train system on test data\n',
-                        '-m/-minify:   Minify a file using the network trained\n'
-                        );
-        }
+    this.start = function(args){
+        var thisFile = args[1].split('/').pop();
+        if (args.length === 2 || args[2] === '-h' || args[2] === '-help')
+            messages.startup.help(thisFile).send();
         else{
+            if(!this.flagToFunction.hasOwnProperty(args[2]))
+                messages.startup.invalidFlag(thisFile, args[2]).error();
+
             // Allow more than one consecutive flag so multple steps can be run at once
-            this.flagToFunction[process.argv[2]](function(){
-
-                if (_this.flagToFunction[process.argv[3]]){
-
-                    _this.flagToFunction[process.argv[3]](function(){
-
-                        if (_this.flagToFunction[process.argv[4]])
-                            _this.flagToFunction[process.argv[4]](null, process.argv[5]);
-                    }, process.argv[4]);
-                }
-            }, process.argv[3]);
+            var NUMBER_OF_SECTIONS = 4;
+            (function runPart(index){
+                _this.flagToFunction[args[index]](function(){
+                    if (_this.flagToFunction[args[index + 1]] && index <= NUMBER_OF_SECTIONS)
+                        runPart(index + 1);
+                    else
+                        messages.startup.invalidFlag(thisFile, args[index + 1]).error();
+                }, args[index + 1]);
+            })(2);
         }
     };
 
@@ -95,5 +90,5 @@ module.exports = App;
 // Always start the system when this file is called from command line when not being tested
 if (process.argv.length >= 2 && process.argv[1].indexOf('mocha') < 0){
     var app = new App();
-    app.start();
+    app.start(process.argv);
 }

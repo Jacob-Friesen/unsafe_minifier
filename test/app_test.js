@@ -105,7 +105,7 @@ module.exports = function(callback){
             });
         });
 
-        describe.only('#minifyFile()', function(){
+        describe('#minifyFile()', function(){
             beforeEach(function(){
                 test.Minification = stub(test.app, 'Minification');
 
@@ -138,6 +138,126 @@ module.exports = function(callback){
 
                 assert.isTrue(test.minifyFile.calledOnce);
                 assert.isTrue(test.minifyFile.calledWith('test.js'));
+            });
+        });
+
+        describe('#start()', function(){
+            beforeEach(function(){
+                test.names = [];
+
+                // This sets a test stub by the name sent in and sets the flagToFunction values, defined in the args past that, to the stub
+                function setFlagToFunctionFlag(func){
+                    test[func] = stub();
+                    test.names.push(func);
+
+                    var flags = Array.prototype.slice.call(arguments, 1);
+                    flags.forEach(function(flag){
+                        test.app.flagToFunction[flag] = test[func];
+                    });
+                }
+
+                setFlagToFunctionFlag('generateTrainingData', '-g', '-generate');
+                setFlagToFunctionFlag('trainSystem', '-t', '-train');
+                setFlagToFunctionFlag('minifyFile', '-m', '-minify');
+            });
+
+            // No restores because flagToFunction is restored for each test with new App()
+
+            it('should send the help message when no arguments are provided or -h or -help is sent', function(){
+                var help = stub(messages.startup, 'help');
+                help.returns({send: function(){} });
+
+                function asserts(file){
+                    assert.isTrue(help.calledOnce);
+                    assert.isTrue(help.calledWith(file));
+                    help.callCount -= 1;
+                }
+
+                ['-h', '-help'].forEach(function(flag){
+                    test.app.start(['node','app.js', flag]);
+                    asserts('app.js');
+                });
+
+                // Must check for only 2 arguments with no empty writing
+                test.app.start(['node','app.js']);
+                asserts('app.js');
+
+                help.restore();
+            });
+
+            it('should throw a invalid flag error if a flag with no defined behavior is sent', function(){
+                expect(function(){
+                    test.app.start(['node','app.js','-r']);
+                }).to.throw(messages.startup.invalidFlag());
+            });
+
+            it('should call the generate function when a -g or -generate is passed', function(){
+                ['-g', '-generate'].forEach(function(flag){
+                    test.app.start(['node','app.js',flag]);
+
+                    assert.isTrue(test.generateTrainingData.calledOnce);
+                    test.generateTrainingData.callCount -= 1;
+                });
+            });
+
+            it('should call the train function when a -t or -train is passed', function(){
+                ['-t', '-train'].forEach(function(flag){
+                    test.app.start(['node','app.js',flag]);
+
+                    assert.isTrue(test.trainSystem.calledOnce);
+                    test.trainSystem.callCount -= 1;
+                });
+            });
+
+            it('should call the minify function when a -m or -minify is passed with the sent file', function(){
+                ['-m', '-minify'].forEach(function(flag){
+                    test.app.start(['node','app.js',flag,'test.js']);
+
+                    assert.isTrue(test.minifyFile.calledOnce);
+                    assert.equal(test.minifyFile.args[0][1], 'test.js');
+                    test.minifyFile.callCount -= 1;
+                });
+            });
+
+            it('should call the generate function and error when a -g and invalid argument are sent', function(){
+                test.generateTrainingData.callsArg(0);
+
+                expect(function(){
+                    test.app.start(['node','app.js','-g','-r']);
+                }).to.throw(messages.startup.invalidFlag());
+                assert.isTrue(test.generateTrainingData.calledOnce);
+            });
+
+            it('should call the generate and train functions when a -g and -t are sent', function(){
+                test.generateTrainingData.callsArg(0);
+
+                test.app.start(['node','app.js','-g','-t']);
+
+                assert.isTrue(test.generateTrainingData.calledOnce);
+                assert.isTrue(test.trainSystem.calledOnce);
+            });
+
+            it('should call the generate and trains function then error when a -g, -t and invalid argument are sent', function(){
+                test.generateTrainingData.callsArg(0);
+                test.trainSystem.callsArg(0);
+
+                expect(function(){
+                    test.app.start(['node','app.js','-g','-t','-r']);
+                }).to.throw(messages.startup.invalidFlag());
+                assert.isTrue(test.generateTrainingData.calledOnce);
+                assert.isTrue(test.trainSystem.calledOnce);
+            });
+
+            it('should call the generate, train and minify functions when a -g, -t and -m are sent and send the file to minifyFile', function(){
+                test.generateTrainingData.callsArg(0);
+                test.trainSystem.callsArg(0);
+
+                test.app.start(['node','app.js','-g','-t', '-m', 'test.js']);
+
+                assert.isTrue(test.generateTrainingData.calledOnce);
+                assert.isTrue(test.trainSystem.calledOnce);
+                assert.isTrue(test.minifyFile.calledOnce);
+                assert.equal(test.minifyFile.args[0][1], 'test.js');
             });
         });
 

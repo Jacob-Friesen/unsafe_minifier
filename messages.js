@@ -181,7 +181,26 @@ messages.utility = messages.create({
     toArrayAlreadyDefined: function(){
         return this.form('Error: Could not created toArray function, toArray for the arguments object has already been defined:\n' + arguments.toArray);
     }
-})
+});
+
+messages.startup = messages.create({
+    help: function(mainFile){
+        return this.form('\nUsage: ' + mainFile + ' <flag>\n' +
+        'Flags:\n' +
+        '-h/help:      Display how to use program\n' +
+        '-g/-generate: Generate the test data\n' +
+        '-t/-train:    Train system on test data\n' +
+        '-m/-minify:   Minify a file using the network trained\n');
+    },
+
+    invalidFlag: function(file, flag){
+        // Remove the first two lines
+        var message = messages.startup.help(file).split('\n')
+            message = message.slice(3, message.length).join('\n');
+
+        return this.form('Error: "' + flag + '" is not a valid flag. The valid flags are:\n' + message);
+    }
+});
 
 module.exports = function(){
     return messages;
