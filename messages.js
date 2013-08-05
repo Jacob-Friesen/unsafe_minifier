@@ -139,6 +139,10 @@ messages.training = messages.create({
 });
 
 messages.minification = messages.create({
+    fileEmpty: function(){
+        return this.form('Error: merging file must be specified');
+    },
+
     filesNotSpecified: messages.generation.filesNotSpecified,
 
     writtenUnsafe: function(file){
@@ -161,6 +165,8 @@ messages.minification = messages.create({
         return this.form('Error: No networks have been specified in mergeDecider');
     }
 });
+
+messages.minification.fileEmpty.bind(messages.minification);
 
 messages.utility = messages.create({
     fileNoParse: function(file){

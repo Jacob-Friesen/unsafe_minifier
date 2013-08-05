@@ -6,7 +6,10 @@
 // -t/-train:    Train system on test data
 // -m/-minify:   Minify a file using the network trained
 
-var DataGeneration = require('./generation'),
+var _ = require('lodash');
+
+var messages = new require('./messages')(),
+    DataGeneration = require('./generation'),
     Training = require('./training'),
     Minification = require('./minification');
 
@@ -29,7 +32,7 @@ function App(){
     };
 
     this.generateTrainingData = function(callback){
-        var generator = new this.DataGeneration(_this.LOCS.rawDataDirectory, _this.LOCS.mergedDataDirectory, _this.LOCS.files);
+        var generator = new _this.DataGeneration(_this.LOCS.rawDataDirectory, _this.LOCS.mergedDataDirectory, _this.LOCS.files);
         generator.generateData(null, callback);
     };
 
@@ -38,9 +41,10 @@ function App(){
         training.train(callback);
     };
 
+    // Callback is used for consistency among different system starting sections, it is not currently used.
     this.minifyFile = function(callback, file){
-        if (typeof file === 'undefined')
-            throw('Error: merging file must be specified');
+        if (_.isEmpty(file))
+            messages.minification.fileEmpty().error();
             
         var minification = new _this.Minification(_this.LOCS.files);
         minification.minifyFile(file);

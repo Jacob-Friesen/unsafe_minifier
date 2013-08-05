@@ -1,8 +1,10 @@
 var _ = require('lodash'),
     chai = require('chai'),
-    assert = chai.assert;
+    assert = chai.assert,
+    expect = chai.expect;
 
-var u = require('../utility_functions.js'),
+var helper = new require('./test_helpers.js')(),
+    messages = new require('../messages')(),
     DataGeneration = require('../generation'),
     Training = require('../training'),
     Minification = require('../minification'),
@@ -100,6 +102,42 @@ module.exports = function(callback){
 
                 assert.isTrue(test.train.calledOnce);
                 assert.isTrue(test.train.calledWith(callback));
+            });
+        });
+
+        describe.only('#minifyFile()', function(){
+            beforeEach(function(){
+                test.Minification = stub(test.app, 'Minification');
+
+                test.minifyFile = stub();
+                test.Minification.returns({minifyFile: test.minifyFile});
+            });
+
+            afterEach(function(){
+                test.Minification.restore();
+            });
+
+            it('should throw a merging file not specified error when file is empty in some form', function(){
+                helper.ENUTest(function(file){
+                    expect(function(){
+                        test.app.minifyFile(null, file); 
+                    }).to.throw(messages.minification.fileEmpty());
+                });
+            });
+
+            it('should call the Minification constructor with the files', function(){
+                test.app.minifyFile(null, 'test.js');
+
+                assert.isTrue(test.Minification.calledOnce);
+                assert.isTrue(test.Minification.calledWith(test.app.LOCS.files));
+            });
+
+            it('should call Minification.minifyFile with the file sent in', function(){
+                var callback = stub();
+                test.app.minifyFile(null, 'test.js');
+
+                assert.isTrue(test.minifyFile.calledOnce);
+                assert.isTrue(test.minifyFile.calledWith('test.js'));
             });
         });
 

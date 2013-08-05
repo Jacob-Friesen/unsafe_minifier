@@ -144,9 +144,6 @@ module.exports = function Trainer(files){
     
     // Partitions the data randomly according to the partition amount modifies sent in data.
     this.partitionData = (function(data){
-        if(u.nullOrUndefined(data))
-            messages.training.cannotPartition().error();
-
         var training = [];
         
         var portionNeeded = data.length * _this.PARTITION;
