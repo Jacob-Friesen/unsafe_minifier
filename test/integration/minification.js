@@ -24,10 +24,6 @@ module.exports = function(){
             });
         }
 
-        function createRestOfTestData(callback){
-            callback();
-        }
-
         function fileContentsEqual(file, contents, callback){
             fs.readFile(file, 'utf8', function(err, data){
                 if (err) throw(err);
@@ -108,7 +104,7 @@ function1(1,2);\n\
 var x = function2(3, 4);';
 
 data.minSafeFile = data.toMergeFile.replace('js', 'safe.min.js');
-data.minSafe = 'function function1(a,b){a+b}function function2(a,b){return a*b}function1(1,2);var x=function2(3,4);\n';
+data.minSafe = 'function function1(x,y){x+y}function function2(w,z){return w*z}function1(1,2);var x=function2(3,4);';
 
 data.minUnsafeFile = data.toMergeFile.replace('js', 'min.js');
 data.minUnsafe =
@@ -121,7 +117,7 @@ data.minUnsafe =
 var x = function2(1, 2, 3, 4);';
 
 data.minCombinedFile = data.toMergeFile.replace('js', 'full.min.js');
-data.minCombined ='function function2(a,b,c,d){a+b;return c*d}var x=function2(1,2,3,4);\n';
+data.minCombined ='function function2(x,y,w,z){{x+y}return w*z}var x=function2(1,2,3,4);';
 
 // Just the data I obtained from a normal run, any non extreme outlier results will work
 data.neuralNetworkFile = 'data/test_network/neuralNetwork0.json';

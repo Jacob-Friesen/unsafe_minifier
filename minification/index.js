@@ -88,12 +88,12 @@ module.exports = function Minification(files){
             messages.minification.writtenUnsafe(unsafeMinified).send();
             
             var fullyMinified = toMinify.replace('.js','.full.min.js');
-            child_process.exec('java -jar safe_minifier/compiler.jar --js='+unsafeMinified+' --js_output_file='+fullyMinified, function(err){
+            child_process.exec('uglifyjs '+unsafeMinified+' -o '+fullyMinified, function(err){
                 if (err) throw(err);
                 messages.minification.writtenFull(fullyMinified).send();
                 
                 var safeFile = toMinify.replace('.js','.safe.min.js');
-                child_process.exec('java -jar safe_minifier/compiler.jar --js='+toMinify+' --js_output_file='+safeFile, function(err){
+                child_process.exec('uglifyjs '+toMinify+' -o '+safeFile, function(err){
                     if (err) throw(err);
                     messages.minification.writtenSafe(safeFile).send();
                     

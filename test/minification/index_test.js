@@ -340,7 +340,7 @@ module.exports = function(callback){
                 test.minification.writeMinifiedFiles('test.js', test.aIsB);
 
                 assert.isTrue(test.exec.calledOnce);
-                assert.isTrue(test.exec.calledWith('java -jar safe_minifier/compiler.jar --js=test.min.js --js_output_file=test.full.min.js'));
+                assert.isTrue(test.exec.calledWith('uglifyjs test.min.js -o test.full.min.js'));
             });
 
             it('should send a message explaining the first file has been fully minified and written', function(){
@@ -361,7 +361,7 @@ module.exports = function(callback){
                 test.minification.writeMinifiedFiles('test.js', test.aIsB);
 
                 assert.isTrue(test.exec.calledTwice);
-                assert.isTrue(test.exec.calledWith('java -jar safe_minifier/compiler.jar --js=test.js --js_output_file=test.safe.min.js'));
+                assert.isTrue(test.exec.calledWith('uglifyjs test.js -o test.safe.min.js'));
             });
 
             it('should send a message explaining the first file has been fully minified and written', function(){
