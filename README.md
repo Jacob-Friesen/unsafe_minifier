@@ -20,7 +20,7 @@ These installation instructions are intended for a Debian based OS, though they 
 **Automatic:**
  * Run: make install or node install.js
 
-** Dependencies (automatically resolved with the automatic installer):
+**Dependencies (automatically resolved with the automatic installer):**
  * For NVM:
   * build-essential
   * libssl-dev
@@ -33,8 +33,9 @@ These installation instructions are intended for a Debian based OS, though they 
  * For safe minification: UglifyJS (NPM module)
 
 **Manual:**
+
 1. Install Node.js v0.8.2, not the latest as there is a problem with the node fann bindings library.
- * I suggest using [nvm](https://github.com/creationix/nvm) (node version manager) to install Node.js.
+ * I suggest using [nvm](https://github.com/creationix/nvm) (Node Version Manager) to install Node.js.
 2. Install Uglify.js globally: npm install uglify-js -g
 3. Installing FANN (Fast Artificial Nueral Networks):
  * Install [CMAKE](http://www.cmake.org/cmake/resources/software.html) so you can build FANN.
@@ -115,8 +116,8 @@ Future
 ======
 The goal is to upgrade the minifier to the point where it can correct choose above 90% of minifications and where it provides a minification bonus of 50%.
 
-**Short Term: Simplify installation so it can be done in 1 step and test function finding in the AST analysis.**
+**Short Term: Test and improve function finding in the AST analysis.**
 
 Contributions
 =============
-I am happy to accept any help, but I would suggest those willing to wait until I get much more complete test coverage (for their own sanity). This should happen in the next few weeks.
+Apart from unit tests for function finding in ASTs the project is fully tested so contributions are now welcome.
