@@ -159,7 +159,7 @@ else
 fi
 
 printf "\n"
-printf "${blue}Installation is now complete. Since this bash script invokes some changes in a seperate context, make sure you are using Node.js v0.8.2 (node -v to check)\n"
+printf "${blue}Installation is now complete. Since this bash script invokes some changes in a seperate context, make sure to source ~/.bashrc and ~/.profile. Also, make sure to switch to node v0.8.2 with nvm (nvm use 0.8.2)\n"
 printf "\n${reset}"
 
 #command -v node >/dev/null 2>&1 {local result = 0} || { local result = 0 }

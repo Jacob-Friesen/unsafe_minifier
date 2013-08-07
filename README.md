@@ -17,8 +17,8 @@ Installation
 ============
 These installation instructions are intended for a Debian based OS, though they should apply to most UNIX based OSs.
 
-**Automatic:**
- * Run: make install or node install.js
+**Automatic (Debian OS only):**
+ * Run: make install
 
 **Dependencies (automatically resolved with the automatic installer):**
  * For NVM:
@@ -60,10 +60,10 @@ Below is an explanation of the main files and directories in this directory. Det
 
 **Files:**
  * **app.js:** Central file that runs everything.
- * **install.js:** Node script that runs the installation process automatically.
+ * **install.sh:** Bash script that runs the installation process automatically.
  * **Makefile** Defines the commands to test this application.
  * **messages.js:** Central location of all error and console messages.
- * **report.pdf:** Report on why I made the choices I did and some of the data behind those choices.
+ * **report.pdf:** Report on why I made the choices I did and some of the data behind those choices. This is now becoming out of date as it was done at the start of the project.
  * **simple_example.js:** A two function file with 2 calls that can be minified, same example as in report.
  * **simple_example.min.js:** The simple example unsafely minified.
  * **simple_example.full.min.js:** The simple example unsafely minified and then safely minified.
@@ -72,7 +72,7 @@ Below is an explanation of the main files and directories in this directory. Det
 
 Testing
 =======
-**To run all tests:** make test-all
+**To run all tests:** make test-all or make test-a
 
 **Debugging Tests:** One debug listener for unit and integration tests
  * Make sure to have [node-inspector](https://github.com/node-inspector/node-inspector) installed globally
