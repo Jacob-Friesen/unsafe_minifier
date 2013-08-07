@@ -1,4 +1,7 @@
 REPORTER = spec
+
+install:
+	bash install.sh
  
 test:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
@@ -47,4 +50,4 @@ test-debug:
 test-d: test-debug
 
 
-.PHONY: test test-watch test-integration test-all test-debug
+.PHONY: install test test-watch test-integration test-all test-debug

@@ -1,7 +1,7 @@
 var _ = require('lodash'),
     fs = require('fs'),
     util = require('util'),
-    fann = require('node_fann');
+    fann = require('fann');
 
 var u = require('../utility_functions.js'),
     messages = new require('../messages.js')();

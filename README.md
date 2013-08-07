@@ -17,20 +17,30 @@ Installation
 ============
 These installation instructions are intended for a Debian based OS, though they should apply to most UNIX based OSs.
 
-1. Install node v0.8.2, not the latest as there is a problem with the node fann bindings library.
- * I suggest using [nvm](https://github.com/creationix/nvm) (node version manager) to do this.
- * **Do not** use NPM to install packages locally, I have had to quickly modify a few libraries to iron out some of their bugs.
+**Automatic:**
+ * Run: make install or node install.js
+
+** Dependencies (automatically resolved with the automatic installer):
+ * For NVM:
+  * build-essential
+  * libssl-dev
+  * curl
+  * git-core
+ * For Node.js:
+  * python
+  * g++
+  * make
+ * For safe minification: UglifyJS (NPM module)
+
+**Manual:**
+1. Install Node.js v0.8.2, not the latest as there is a problem with the node fann bindings library.
+ * I suggest using [nvm](https://github.com/creationix/nvm) (node version manager) to install Node.js.
 2. Install Uglify.js globally: npm install uglify-js -g
 3. Installing FANN (Fast Artificial Nueral Networks):
  * Install [CMAKE](http://www.cmake.org/cmake/resources/software.html) so you can build FANN.
  * Install [FANN](http://leenissen.dk/fann/wp/download/).
    * [Installation instructions](http://leenissen.dk/fann/wp/help/installing-fann/)
 4. If running "node main.js" results in an error, run 'ldconfig'. The exact command may vary based on OS.
-5. If running "node main.js" still results in an error, you probably need to recompile the Node Fann bindings:
- * Install node-gyp globally: npm install -g node-gyp
- * Navigate to node_modules/node-fann.
- * Run: node-gyp configure
- * Run: node-gyp build
 
 Contact me at jacob@jacobfriesen.com if any of these steps don't work on your machine.
 
@@ -48,8 +58,9 @@ Below is an explanation of the main files and directories in this directory. Det
  * **tests:** Tests for all the code, can be run from the top level with: make test-all
 
 **Files:**
- * **Makefile** Defines the commands to test this application.
  * **app.js:** Central file that runs everything.
+ * **install.js:** Node script that runs the installation process automatically.
+ * **Makefile** Defines the commands to test this application.
  * **messages.js:** Central location of all error and console messages.
  * **report.pdf:** Report on why I made the choices I did and some of the data behind those choices.
  * **simple_example.js:** A two function file with 2 calls that can be minified, same example as in report.

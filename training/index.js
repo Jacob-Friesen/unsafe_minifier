@@ -1,6 +1,6 @@
 var fs = require('fs'),
     util = require('util'),
-    fann = require('node_fann'),
+    fann = require('fann'),
     _ = require('lodash');
 
 var u = require('../utility_functions.js'),

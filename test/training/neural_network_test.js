@@ -8,7 +8,7 @@ var _ = require('lodash'),
 
 var helper = new require('../test_helpers.js')(),
     messages = new require('../../messages.js')(),
-    fann = require('node_fann'),
+    fann = require('fann'),
     fs = require('fs'),
     NeuralNetwork = require('../../training/neural_network.js');
 

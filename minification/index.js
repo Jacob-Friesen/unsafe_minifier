@@ -1,7 +1,7 @@
 var fs = require('fs'),
     esprima = require("esprima"),
     escodegen = require("escodegen"),
-    fann = require('node_fann'),
+    fann = require('fann'),
     child_process = require('child_process');
 
 var u = require('../utility_functions.js'),
