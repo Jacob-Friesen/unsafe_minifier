@@ -3,7 +3,8 @@ var _ = require('lodash'),
     chai = require('chai'),
     assert = chai.assert;
 
-var Minification = require('../../minification');
+var messages = new require('../../messages')(),
+    Minification = require('../../minification');
 
 // Creates a simple merging function then checks if it was minified correctly by checking all output files.
 module.exports = function(){
@@ -52,7 +53,7 @@ module.exports = function(){
         }
 
         before(function(done){
-            this.timeout(5000);// Once Java is removed (soon) this will be unnecessary
+            messages.minification.print = false;
 
             createTestData(function(){
                 var minification = new Minification(data.files);
@@ -63,6 +64,8 @@ module.exports = function(){
 
         // Remove all created files and directories
         after(function(done){
+            messages.minification.print = true;
+
             removeFiles(data.toMergeFile, data.minSafeFile, data.minUnsafeFile, data.minCombinedFile, data.neuralNetworkFile, function(){
                 fs.rmdir(data.neuralNetworkDir, function(err){
                     if (err) throw(err);
