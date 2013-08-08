@@ -70,13 +70,17 @@ function App(){
                 messages.startup.invalidFlag(thisFile, args[2]).error();
 
             // Allow more than one consecutive flag so multple steps can be run at once
-            var NUMBER_OF_SECTIONS = 4;
             (function runPart(index){
+                console.log('index', index);
+
                 _this.flagToFunction[args[index]](function(){
-                    if (_this.flagToFunction[args[index + 1]] && index <= NUMBER_OF_SECTIONS)
-                        runPart(index + 1);
-                    else
+                    if (index >= args.length - 1)
+                        return true;
+
+                    if (typeof _this.flagToFunction[args[index + 1]] === 'undefined')
                         messages.startup.invalidFlag(thisFile, args[index + 1]).error();
+                    else
+                        runPart(index + 1);
                 }, args[index + 1]);
             })(2);
         }
