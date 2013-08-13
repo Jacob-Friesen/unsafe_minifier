@@ -52,38 +52,6 @@ module.exports = function(callback){
             });
         });
 
-        describe('#getResultOf()', function(){
-            function setThreshold(threshold){
-                setNetwork({
-                    run: function(data){
-                        return threshold;
-                    }
-                });
-            }
-
-            beforeEach(function(){
-                test.standard = stub(fann, 'standard');
-                setNetwork({});
-            });
-
-            afterEach(function(){
-                test.standard.restore();
-            });
-
-            // No specific error checking (or testing) the default error for sending in data is sufficient
-            it('should return 0 when the network output is less than the threshold', function(){
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD - 0.0001);
-                assert.equal(test.neuralNetwork.getResultOf({}), 0);
-            });
-
-            it('should return 1 when the network output is >= to the threshold', function(){
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD);
-                assert.equal(test.neuralNetwork.getResultOf({}), 1);
-                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD + 0.0001);
-                assert.equal(test.neuralNetwork.getResultOf({}), 1);
-            });
-        });
-
         describe('#save()', function(){
             beforeEach(function(){
                 test.standard = stub(fann, 'standard');
@@ -154,6 +122,38 @@ module.exports = function(callback){
 
                 logStub.restore();
                 callbackSpy.restore();
+            });
+        });
+
+        describe('#getResultOf()', function(){
+            function setThreshold(threshold){
+                setNetwork({
+                    run: function(data){
+                        return threshold;
+                    }
+                });
+            }
+
+            beforeEach(function(){
+                test.standard = stub(fann, 'standard');
+                setNetwork({});
+            });
+
+            afterEach(function(){
+                test.standard.restore();
+            });
+
+            // No specific error checking (or testing) the default error for sending in data is sufficient
+            it('should return 0 when the network output is less than the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD - 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 0);
+            });
+
+            it('should return 1 when the network output is >= to the threshold', function(){
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
+                setThreshold(test.neuralNetwork.OUTPUT_THRESHOLD + 0.0001);
+                assert.equal(test.neuralNetwork.getResultOf({}), 1);
             });
         });
 

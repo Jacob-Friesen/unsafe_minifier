@@ -53,310 +53,6 @@ module.exports = function(callback){
             });
         });
 
-        describe('#train()', function(){
-            function prepareData(print, data){
-                messages.training.print = print;
-                test.readFile.callsArg(2);
-                test.parse.returns(data);
-            }
-
-            beforeEach(function(){
-                test.callback = stub();
-                test.readFile = stub(fs, 'readFile');
-                test.parse = stub(JSON, 'parse');
-                test.runTraining = stub(test.trainer, 'runTraining');
-                test.yesNoStats = stub(messages.training, 'yesNoStats');
-                test.yesNoStats.returns({send: function(){} });
-
-                messages.training.print = false;
-            });
-
-            afterEach(function(){
-                test.readFile.restore();
-                test.parse.restore();
-                test.yesNoStats.restore();
-                test.runTraining.restore();
-            });
-
-            it('should call readFile with the combinedData in utf8 format', function(){
-                test.trainer.train();
-
-                assert.isTrue(fs.readFile.calledOnce);
-                assert.isTrue(fs.readFile.calledWith(test.combinedDataFile, 'utf8'))
-            });
-
-            it('should call yesNoStats with the number of all 0s when there is no data points', function(){
-                prepareData(true, []);
-
-                test.trainer.train();
-                assert.isTrue(test.yesNoStats.calledWith(0, 0, 0));
-            });
-
-            it('should call yesNoStats with the number of valid invalid and total number of data points', function(){
-                prepareData(true, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
-
-                test.trainer.train();
-
-                assert.isTrue(test.yesNoStats.calledOnce);
-                assert.isTrue(test.yesNoStats.calledWith(2, 1, 3));
-            });
-
-            it('should call runTraining with the data retrieved from file and the callback as arguments', function(){
-                var data = [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}];
-                prepareData(false, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
-
-                test.trainer.train(test.callback);
-
-                assert.isFalse(test.yesNoStats.called);
-                assert.isTrue(test.runTraining.calledOnce);
-                assert.isTrue(test.runTraining.calledWith(data, test.callback));
-            });
-        });
-
-        describe('#runTraining()', function(){
-            beforeEach(function(){
-                test.callback = stub();
-                test.averageStats = stub(messages.training, 'averageStats');
-                test.averageStats.returns({send: function(){} });
-
-                test.formatData = stub(test.trainer, 'formatData');
-                test.evenizeData = stub(test.trainer, 'evenizeData');
-                test.partitionData = stub(test.trainer, 'partitionData');
-                test.partitionData.returns({training: [], test: []});
-
-                test.runNetwork = stub(test.trainer, 'runNetwork');
-                test.runNetwork.callsArg(4);
-
-                messages.training.print = false;
-            });
-
-            afterEach(function(){
-                test.averageStats.restore();
-                test.formatData.restore();
-                test.evenizeData.restore();
-                test.partitionData.restore();
-                test.runNetwork.restore();
-            });
-
-            it('should call run network with the test and training dataPartitions, whether to save the networks, and the current recurse, and call ' +
-               'the callback', function(){
-                // Formats don't matter just need to tell if the vars were passed correctly
-                var training = ['test1'],
-                    testing = ['test2'];
-                test.partitionData.returns({training: training, testing: testing});
-
-                test.trainer.runTraining([], test.callback);
-
-                Array(test.trainer.NETWORKS).forEach(function(__, index){
-                     assert.isTrue(test.runNetwork.calledWith(training, test, true, index));
-                });
-                assert.equal(test.runNetwork.callCount, test.trainer.NETWORKS);
-            });
-
-            it('should print average stats with [0,0,0] for success rates when combinedData is enu NETWORKS times and call the callback', function(){
-                helper.ENUTest(function(data){
-                    messages.training.print = true;
-
-                    test.trainer.runTraining(data, test.callback);
-
-                    assert.isTrue(test.averageStats.calledOnce);
-                    test.averageStats.callCount -= 1;
-                    assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, [0,0,0]));
-                    assert.isTrue(test.callback.calledOnce);
-                    test.callback.callCount -= 1;
-                });
-            });
-
-            it('should print average stats with 0.625,0.5,0.75 each multiplied by the network for success rates when runNetwork provides that', 
-            function(){
-                messages.training.print = true;
-
-                // Have to restore and stub again to get a proper first call
-                test.runNetwork.restore();
-                test.runNetwork = stub(test.trainer, 'runNetwork');
-
-                var rates = [0.625,0.5,0.75];
-                test.runNetwork.callsArgWith(4, rates[0], rates[1], rates[2]);
-
-                test.trainer.runTraining([], test.callback);
-
-                assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, rates.map(function(rate){
-                    return rate * test.trainer.NETWORKS;
-                })));
-            });
-        });
-
-        describe('#formatData()', function(){
-            it('should return an empty array when datapoint is enu', function(){
-                helper.ENUTest(function(data){
-                    assert.deepEqual(test.trainer.formatData(data), []);
-                });
-            });
-
-            it('should return the array of added values', function(){
-                var data = [0,1,2].map(function(setTo){
-                    return {
-                        prop1: setTo,
-                        prop2: setTo + 1
-                    }
-                });
-
-                assert.deepEqual(test.trainer.formatData(data), [0,1,2].map(function(setTo){
-                    return [[setTo, setTo + 1],[0]];
-                }));
-            });
-        });
-
-        describe('#formatDataPoint()', function(){
-            it('should return an array like [[], [0]] when datapoint is enu', function(){
-                helper.ENUTest(function(point){
-                    assert.deepEqual(test.trainer.formatDataPoint(point), [[],[0]]);
-                });
-            });
-
-            it('should never include the name or valid values in the input array', function(){
-                assert.deepEqual(test.trainer.formatDataPoint({
-                    name: 'test',
-                    other: 1,
-                    valid: 'yes'
-                })[0], [1]);
-            });
-
-            it('should transform all values in the input array to numbers if necessary', function(){
-                var rNum = 'r'.charCodeAt(0);
-                assert.deepEqual(test.trainer.formatDataPoint({
-                    name: 'test',
-                    prop1: 1,
-                    prop2: 'red',
-                    prop3: 'r',
-	            prop4: 3,
-                    valid: 'yes'
-                })[0], [1,rNum,rNum,3]);
-            });
-
-            it('should return a 0 for the output array when valid is "no"', function(){
-                assert.deepEqual(test.trainer.formatDataPoint({valid: 'no'})[1][0], 0);
-            });
-
-            it('should return a 1 for the output array when valid is "yes"', function(){
-                assert.deepEqual(test.trainer.formatDataPoint({valid: 'yes'})[1][0], 1);
-            });
-        });
-
-        describe('#evenizeData()', function(){
-            function CheckValidInvalid(data, correct){
-                var found = [0,0];
-                test.trainer.evenizeData(data).forEach(function(point) {
-                    found[point[1]] += 1;
-                });
-
-                assert.deepEqual(found, correct);
-            }
-
-            it('should return an empty array when input is enu', function(){
-                helper.ENUTest(function(data){
-                    assert.deepEqual(test.trainer.evenizeData(data), []);
-                });
-            });
-
-            it('should return an empty array when there is no valid data', function(){
-                assert.deepEqual(test.trainer.evenizeData([
-                    [[1,2],[0]],
-                    [[3,4],[0]]
-                ]), []);
-            });
-
-            it('should return an empty array when there is no invalid data', function(){
-                assert.deepEqual(test.trainer.evenizeData([
-                    [[1,2],[1]],
-                    [[3,4],[1]]
-                ]), []);
-            });
-
-            it('should return an array containing one valid and invalid when there are 2 values', function(){
-                var data = [
-                    [[1,2],[0]],
-                    [[3,4],[1]]
-                ];
-                var old = data.concat([]);
-
-                data = test.trainer.evenizeData(data);
-                data.sort(function(point1, point2){
-                      if (point1[1] < point2[1])
-                         return -1;
-                      if (point1[1] > point2[1])
-                         return 1;
-                      return 0;
-                });
-                assert.deepEqual(data, old);
-            });
-
-            it('should return an array containing one valid and invalid when there are 3 values (1 invalid only)', function(){
-                var data = [
-                    [[1,2],[1]],
-                    [[3,4],[0]],
-                    [[4,5],[1]]
-                ];
-
-                CheckValidInvalid(data, [1,1]);
-            });
-
-            it('should return an array containing two valids and invalids when there are 7 values (2 invalids only)', function(){
-                var data = [
-                    [[1,2],[1]],
-                    [[3,4],[0]],
-                    [[4,5],[1]],
-                    [[6,7],[1]],
-                    [[8,9],[1]],
-                    [[10,11],[0]],
-                    [[12,13],[1]]
-                ];
-
-                CheckValidInvalid(data, [2,2]);
-            });
-        });
-
-        describe('#partitionData()', function(){
-            function setData(length){
-                var data = Array(length);
-                return test.trainer.partitionData(data);
-            }
-
-            it('should return an object containing empty test and training data if data is empty, null or undefined', function(){
-                helper.ENUTest(function(data){
-                    assert.deepEqual(test.trainer.partitionData(data), {training: [], testing: []});
-                });
-            });
-
-            it('should split the data according to the partition specified', function(){
-                var length = 100,
-                    sets = setData(length);
-
-                assert.equal(sets.training.length, length * test.trainer.PARTITION);
-                assert.equal(sets.testing.length, length - (length * test.trainer.PARTITION));
-            });
-
-            it('should split the data 0 100 when the partion is 1', function(){
-                test.trainer.PARTITION = 1;
-
-                var length = 100,
-                    sets = setData(length);
-
-                assert.equal(sets.training.length, 100);
-                assert.equal(sets.testing.length, 0);
-            });
-
-            it('should split the data 100 0 when the partion is 0', function(){
-                test.trainer.PARTITION = 0;
-
-                var length = 100,
-                    sets = setData(length);
-
-                assert.equal(sets.training.length, 0);
-                assert.equal(sets.testing.length, 100);
-            });
-        });
-
         describe('#runNetwork()', function(){
             function testCallback(toSave, index){
                 test.callback = stub();
@@ -444,6 +140,310 @@ module.exports = function(callback){
                     test.save.callCount -= 1;
                     assert.isTrue(test.save.calledWith(test.neuralNetworkFile.replace('.json',index + '.json')));
                 });
+            });
+        });
+
+        describe('#partitionData()', function(){
+            function setData(length){
+                var data = Array(length);
+                return test.trainer.partitionData(data);
+            }
+
+            it('should return an object containing empty test and training data if data is empty, null or undefined', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.partitionData(data), {training: [], testing: []});
+                });
+            });
+
+            it('should split the data according to the partition specified', function(){
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, length * test.trainer.PARTITION);
+                assert.equal(sets.testing.length, length - (length * test.trainer.PARTITION));
+            });
+
+            it('should split the data 0 100 when the partion is 1', function(){
+                test.trainer.PARTITION = 1;
+
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, 100);
+                assert.equal(sets.testing.length, 0);
+            });
+
+            it('should split the data 100 0 when the partion is 0', function(){
+                test.trainer.PARTITION = 0;
+
+                var length = 100,
+                    sets = setData(length);
+
+                assert.equal(sets.training.length, 0);
+                assert.equal(sets.testing.length, 100);
+            });
+        });
+
+        describe('#evenizeData()', function(){
+            function CheckValidInvalid(data, correct){
+                var found = [0,0];
+                test.trainer.evenizeData(data).forEach(function(point) {
+                    found[point[1]] += 1;
+                });
+
+                assert.deepEqual(found, correct);
+            }
+
+            it('should return an empty array when input is enu', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.evenizeData(data), []);
+                });
+            });
+
+            it('should return an empty array when there is no valid data', function(){
+                assert.deepEqual(test.trainer.evenizeData([
+                    [[1,2],[0]],
+                    [[3,4],[0]]
+                ]), []);
+            });
+
+            it('should return an empty array when there is no invalid data', function(){
+                assert.deepEqual(test.trainer.evenizeData([
+                    [[1,2],[1]],
+                    [[3,4],[1]]
+                ]), []);
+            });
+
+            it('should return an array containing one valid and invalid when there are 2 values', function(){
+                var data = [
+                    [[1,2],[0]],
+                    [[3,4],[1]]
+                ];
+                var old = data.concat([]);
+
+                data = test.trainer.evenizeData(data);
+                data.sort(function(point1, point2){
+                      if (point1[1] < point2[1])
+                         return -1;
+                      if (point1[1] > point2[1])
+                         return 1;
+                      return 0;
+                });
+                assert.deepEqual(data, old);
+            });
+
+            it('should return an array containing one valid and invalid when there are 3 values (1 invalid only)', function(){
+                var data = [
+                    [[1,2],[1]],
+                    [[3,4],[0]],
+                    [[4,5],[1]]
+                ];
+
+                CheckValidInvalid(data, [1,1]);
+            });
+
+            it('should return an array containing two valids and invalids when there are 7 values (2 invalids only)', function(){
+                var data = [
+                    [[1,2],[1]],
+                    [[3,4],[0]],
+                    [[4,5],[1]],
+                    [[6,7],[1]],
+                    [[8,9],[1]],
+                    [[10,11],[0]],
+                    [[12,13],[1]]
+                ];
+
+                CheckValidInvalid(data, [2,2]);
+            });
+        });
+
+        describe('#formatDataPoint()', function(){
+            it('should return an array like [[], [0]] when datapoint is enu', function(){
+                helper.ENUTest(function(point){
+                    assert.deepEqual(test.trainer.formatDataPoint(point), [[],[0]]);
+                });
+            });
+
+            it('should never include the name or valid values in the input array', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({
+                    name: 'test',
+                    other: 1,
+                    valid: 'yes'
+                })[0], [1]);
+            });
+
+            it('should transform all values in the input array to numbers if necessary', function(){
+                var rNum = 'r'.charCodeAt(0);
+                assert.deepEqual(test.trainer.formatDataPoint({
+                    name: 'test',
+                    prop1: 1,
+                    prop2: 'red',
+                    prop3: 'r',
+                prop4: 3,
+                    valid: 'yes'
+                })[0], [1,rNum,rNum,3]);
+            });
+
+            it('should return a 0 for the output array when valid is "no"', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({valid: 'no'})[1][0], 0);
+            });
+
+            it('should return a 1 for the output array when valid is "yes"', function(){
+                assert.deepEqual(test.trainer.formatDataPoint({valid: 'yes'})[1][0], 1);
+            });
+        });
+
+        describe('#formatData()', function(){
+            it('should return an empty array when datapoint is enu', function(){
+                helper.ENUTest(function(data){
+                    assert.deepEqual(test.trainer.formatData(data), []);
+                });
+            });
+
+            it('should return the array of added values', function(){
+                var data = [0,1,2].map(function(setTo){
+                    return {
+                        prop1: setTo,
+                        prop2: setTo + 1
+                    }
+                });
+
+                assert.deepEqual(test.trainer.formatData(data), [0,1,2].map(function(setTo){
+                    return [[setTo, setTo + 1],[0]];
+                }));
+            });
+        });
+
+        describe('#runTraining()', function(){
+            beforeEach(function(){
+                test.callback = stub();
+                test.averageStats = stub(messages.training, 'averageStats');
+                test.averageStats.returns({send: function(){} });
+
+                test.formatData = stub(test.trainer, 'formatData');
+                test.evenizeData = stub(test.trainer, 'evenizeData');
+                test.partitionData = stub(test.trainer, 'partitionData');
+                test.partitionData.returns({training: [], test: []});
+
+                test.runNetwork = stub(test.trainer, 'runNetwork');
+                test.runNetwork.callsArg(4);
+
+                messages.training.print = false;
+            });
+
+            afterEach(function(){
+                test.averageStats.restore();
+                test.formatData.restore();
+                test.evenizeData.restore();
+                test.partitionData.restore();
+                test.runNetwork.restore();
+            });
+
+            it('should call run network with the test and training dataPartitions, whether to save the networks, and the current recurse, and call ' +
+               'the callback', function(){
+                // Formats don't matter just need to tell if the vars were passed correctly
+                var training = ['test1'],
+                    testing = ['test2'];
+                test.partitionData.returns({training: training, testing: testing});
+
+                test.trainer.runTraining([], test.callback);
+
+                Array(test.trainer.NETWORKS).forEach(function(__, index){
+                     assert.isTrue(test.runNetwork.calledWith(training, test, true, index));
+                });
+                assert.equal(test.runNetwork.callCount, test.trainer.NETWORKS);
+            });
+
+            it('should print average stats with [0,0,0] for success rates when combinedData is enu NETWORKS times and call the callback', function(){
+                helper.ENUTest(function(data){
+                    messages.training.print = true;
+
+                    test.trainer.runTraining(data, test.callback);
+
+                    assert.isTrue(test.averageStats.calledOnce);
+                    test.averageStats.callCount -= 1;
+                    assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, [0,0,0]));
+                    assert.isTrue(test.callback.calledOnce);
+                    test.callback.callCount -= 1;
+                });
+            });
+
+            it('should print average stats with 0.625,0.5,0.75 each multiplied by the network for success rates when runNetwork provides that', 
+            function(){
+                messages.training.print = true;
+
+                // Have to restore and stub again to get a proper first call
+                test.runNetwork.restore();
+                test.runNetwork = stub(test.trainer, 'runNetwork');
+
+                var rates = [0.625,0.5,0.75];
+                test.runNetwork.callsArgWith(4, rates[0], rates[1], rates[2]);
+
+                test.trainer.runTraining([], test.callback);
+
+                assert.isTrue(test.averageStats.calledWith(test.trainer.NETWORKS, rates.map(function(rate){
+                    return rate * test.trainer.NETWORKS;
+                })));
+            });
+        });
+
+        describe('#train()', function(){
+            function prepareData(print, data){
+                messages.training.print = print;
+                test.readFile.callsArg(2);
+                test.parse.returns(data);
+            }
+
+            beforeEach(function(){
+                test.callback = stub();
+                test.readFile = stub(fs, 'readFile');
+                test.parse = stub(JSON, 'parse');
+                test.runTraining = stub(test.trainer, 'runTraining');
+                test.yesNoStats = stub(messages.training, 'yesNoStats');
+                test.yesNoStats.returns({send: function(){} });
+
+                messages.training.print = false;
+            });
+
+            afterEach(function(){
+                test.readFile.restore();
+                test.parse.restore();
+                test.yesNoStats.restore();
+                test.runTraining.restore();
+            });
+
+            it('should call readFile with the combinedData in utf8 format', function(){
+                test.trainer.train();
+
+                assert.isTrue(fs.readFile.calledOnce);
+                assert.isTrue(fs.readFile.calledWith(test.combinedDataFile, 'utf8'))
+            });
+
+            it('should call yesNoStats with the number of all 0s when there is no data points', function(){
+                prepareData(true, []);
+
+                test.trainer.train();
+                assert.isTrue(test.yesNoStats.calledWith(0, 0, 0));
+            });
+
+            it('should call yesNoStats with the number of valid invalid and total number of data points', function(){
+                prepareData(true, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
+
+                test.trainer.train();
+
+                assert.isTrue(test.yesNoStats.calledOnce);
+                assert.isTrue(test.yesNoStats.calledWith(2, 1, 3));
+            });
+
+            it('should call runTraining with the data retrieved from file and the callback as arguments', function(){
+                var data = [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}];
+                prepareData(false, [{valid: 'yes'}, {valid: 'no'}, {valid: 'yes'}]);
+
+                test.trainer.train(test.callback);
+
+                assert.isFalse(test.yesNoStats.called);
+                assert.isTrue(test.runTraining.calledOnce);
+                assert.isTrue(test.runTraining.calledWith(data, test.callback));
             });
         });
     });

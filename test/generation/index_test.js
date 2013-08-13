@@ -185,7 +185,7 @@ module.exports = function(callback){
             });
         });
 
-        describe('#GetFileList()', function(){
+        describe('#getFileList()', function(){
             it('should return an empty array if the directory is null or undefined', function(){
                 helper.nullUndefinedTest(function(){
                     assert.deepEqual(generator.getFileList(), []);
