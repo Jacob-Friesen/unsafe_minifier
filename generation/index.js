@@ -4,9 +4,9 @@ var fs = require('fs'),
     _ = require('lodash');
 
 var MergeFunctions = require('../AST_modification/merge_functions'),
-    u = require('../utility_functions.js');
+    u = require('../utility.js');
 
-//constructor, needs base input file to generate the data combinations into the output file.
+// Generates test data needed for training.
 module.exports = function Generator(rawDataDirectory, mergedDataDirectory, files){
     this.MergeFunctions = MergeFunctions;
 

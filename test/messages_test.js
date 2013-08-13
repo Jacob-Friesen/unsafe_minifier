@@ -4,7 +4,7 @@ var chai = require('chai'),
     sinon = require('sinon'),
     stub = sinon.stub;
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     Messages = new require('../messages.js');
 
 module.exports = function(callback){

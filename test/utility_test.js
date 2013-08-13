@@ -3,7 +3,7 @@ var _ = require('lodash'),
     assert = chai.assert,
     expect = chai.expect;
 
-var u = require('../utility_functions'),
+var u = require('../utility'),
     helper = new require('./test_helpers.js')(),
     messages = new require('../messages')();
 module.exports = function(callback){ 

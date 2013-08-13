@@ -1,9 +1,8 @@
 var fs = require('fs'),
-    util = require('util'),
     fann = require('fann'),
     _ = require('lodash');
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     messages = new require('../messages.js')(),
     NeuralNetwork = require('./neural_network.js');
 
@@ -26,7 +25,7 @@ module.exports = function Trainer(files){
 
     var _this = this;
     
-    // Trains the network by fetching the file contained in combinedData
+    // Trains the network by fetching the file contained in combinedData.
     this.train = function(callback){
         fs.readFile(files.combinedData[0], 'utf8', function (err, data) {
             if (err) throw err;

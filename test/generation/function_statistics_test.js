@@ -10,7 +10,7 @@ var FunctionStatistics = require('../../generation/function_statistics.js'),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     test = require('../test_data.js'),
     helper = new require('../test_helpers.js')(),
-    u = require('../../utility_functions.js');
+    u = require('../../utility.js');
 
 module.exports = function(callback){
     describe('FunctionStatistics', function(){

@@ -1,7 +1,7 @@
 var _ = require('lodash'),
     esprima = require("esprima");
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     ReturnHandler = require('./return_handler.js'),
     AST_structure = require('./AST_structures.js');
 

@@ -8,7 +8,7 @@ var _ = require('lodash'),
 
 var MergeFunction = require('../../AST_modification/merge_function.js'),
     Return_Handler = require('../../AST_modification/return_handler.js'),
-    u = require('../../utility_functions.js'),
+    u = require('../../utility.js'),
     messages = new require('../../messages.js')(),
     AST_structure = require('../../AST_modification/AST_structures.js'),
     helper = new require('../test_helpers.js')(),

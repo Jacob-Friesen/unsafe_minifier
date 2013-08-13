@@ -1,8 +1,8 @@
 var _ = require('lodash');
 
-var u = require('../utility_functions.js');
+var u = require('../utility.js');
 
-// Finds function calls given an AST body
+// Finds functions given an AST body
 module.exports = function FindFunctions(AST){
     var _this = this;
 

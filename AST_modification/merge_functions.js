@@ -1,14 +1,12 @@
 var _ = require('lodash');
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     messages = new require('../messages.js')(),
     FindFunctions = require('./find_functions.js'),
     MergeFunction = require('./merge_function.js'),
     FunctionStatistics = require('../generation/function_statistics.js');
 
-// Handles function merging for the given AST. Finds most of the calls and functions in the code, keep in mined
-// JS is extremely expressive and this system is a prototype. Function declerations and calls that will not be
-// discovered are in finddeclarations and findFunctionCalls respectively.
+// Handles function merging for the given AST.
 module.exports = function MergeFunctions(files, AST){
     if (u.nullOrUndefined(files) || u.nullOrUndefined(AST) || u.nullOrUndefined(AST.body))
         messages.merging.noFilesAST().error();

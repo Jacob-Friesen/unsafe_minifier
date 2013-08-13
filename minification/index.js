@@ -4,7 +4,7 @@ var fs = require('fs'),
     fann = require('fann'),
     child_process = require('child_process');
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     messages = new require('../messages.js')(),
     MergeFunctions = require('../AST_modification/merge_functions'),
     Training = require('../training'),

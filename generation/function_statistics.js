@@ -1,6 +1,6 @@
 var _ = require('lodash'),
     fs = require('fs'),
-    u = require('../utility_functions.js');
+    u = require('../utility.js');
 
 // Records statistics by writing into an internal array (statistics) and can write JSON contents to a file.
 module.exports = function FunctionStatistics(){

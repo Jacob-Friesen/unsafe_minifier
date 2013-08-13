@@ -1,6 +1,8 @@
-/*
- * This is a set of functions and object modifications that are unrelated to anything and are used in a wide variety of contexts.
- **/
+// This is a set of functions and object modifications that are unrelated to anything and are used in a wide variety of contexts. There are some
+// prototype overrides (throws an error if they already exist):
+// - Array.prototype.remove
+// - Function.prototype.defaults
+// - Function.prototype.defaultsWith
 var _ = require('lodash');
 
 var messages = new require('./messages.js')();

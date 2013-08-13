@@ -1,6 +1,6 @@
 var _ = require('lodash');
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     messages = new require('../messages.js')();
     AST_structure = require('./AST_structures.js');
 

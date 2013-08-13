@@ -68,7 +68,7 @@ Below is an explanation of the main files and directories in this directory. Det
  * **simple_example.min.js:** The simple example unsafely minified.
  * **simple_example.full.min.js:** The simple example unsafely minified and then safely minified.
  * **simple_example.safe.min.js:** The simple example just safely minified.
- * **utility_functions.js:** A bunch of functions I wrote (except the custom array remove) for use in the entire program.
+ * **utility.js:** A bunch of functions I wrote (except the custom array remove) for use in the entire program.
 
 Testing
 =======

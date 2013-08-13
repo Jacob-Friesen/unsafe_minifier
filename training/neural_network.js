@@ -3,7 +3,7 @@ var _ = require('lodash'),
     util = require('util'),
     fann = require('fann');
 
-var u = require('../utility_functions.js'),
+var u = require('../utility.js'),
     messages = new require('../messages.js')();
 
 // Manages operations on a nueral network. Constructor takes the layer of networks and constructs a standard fully connected back-propogated network.

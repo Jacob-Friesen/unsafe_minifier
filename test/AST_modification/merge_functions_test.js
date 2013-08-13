@@ -6,7 +6,7 @@ var _ = require('lodash'),
     stub = sinon.stub,
     spy = sinon.spy;
 
-var u = require('../../utility_functions.js'),
+var u = require('../../utility.js'),
     messages = new require('../../messages.js')(),
     FindFunctions = require('../../AST_modification/find_functions.js'),
     MergeFunction = require('../../AST_modification/merge_function.js'),
