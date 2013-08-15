@@ -63,6 +63,7 @@ Below is an explanation of the main files and directories in this directory. Det
  * **install.sh:** Bash script that runs the installation process automatically.
  * **Makefile** Defines the commands to test this application.
  * **messages.js:** Central location of all error and console messages.
+ * **MIT_License:** Document explaining this project's MIT license, nothing special added.
  * **report.pdf:** Report on why I made the choices I did and some of the data behind those choices. This is now becoming out of date as it was done at the start of the project.
  * **simple_example.js:** A two function file with 2 calls that can be minified, same example as in report.
  * **simple_example.min.js:** The simple example unsafely minified.
