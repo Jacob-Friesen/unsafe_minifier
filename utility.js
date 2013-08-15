@@ -128,6 +128,10 @@ module.exports = (function(){
         
         return toReturn;
     }
+
+    this.fillArrayWithNumber = (function(size, value){
+        return Array.apply(null, new Array(size)).map(Number.prototype.valueOf, value);
+    }).defaultsWith(this.nullOrUndefined, 0, 0);
     
     return this;
 })();

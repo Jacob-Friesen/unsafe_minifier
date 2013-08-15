@@ -8,7 +8,8 @@ var u = require('../utility'),
     messages = new require('../messages')();
 module.exports = function(callback){ 
 
-    describe('utility_functions', function(){
+    // Test order is reversed from other files due to reverse of abstraction in utility.js
+    describe('utility', function(){
         var test = {};
         beforeEach(function(){
             test = {};
@@ -435,6 +436,30 @@ module.exports = function(callback){
                     for (ele in element)
                         assert.equal(element[ele], combined[index][ele]);
                 });
+            });
+        });
+
+        describe('#fillArrayWithNumber()', function(){
+            it('should return an empty array when size and value are both null or undefined or just size is', function(){
+                helper.dualNullUndefinedTest(function(size, value){
+                    assert.equal(u.fillArrayWithNumber(size, value).length, 0);
+                })(null, 1)(undefined, 1);
+            });
+
+            it('should return an empty array when size is 0', function(){
+                assert.equal(u.fillArrayWithNumber(0).length, 0);
+            });
+
+            it('should return an array of 1 zero when size is 1 and value is undefined', function(){
+                assert.deepEqual(u.fillArrayWithNumber(1), [0]);
+            });
+
+            it('should return an array of 1 77 when size is 1 and value is 77', function(){
+                assert.deepEqual(u.fillArrayWithNumber(1, 77), [77]);
+            });
+
+            it('should return an array of 11 77s when size is 5 and value is 77', function(){
+                assert.deepEqual(u.fillArrayWithNumber(11, 77), [77,77,77,77,77,77,77,77,77,77,77]);
             });
         });
     });
