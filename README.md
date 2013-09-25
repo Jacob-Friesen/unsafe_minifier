@@ -13,6 +13,13 @@ These four outputs should give a clear picture of the limits and potential of th
 
 An analysis and summary of the decisions made can be found in Report.pdf.
 
+**Run**
+* **All**: node app.js -g -t -m <file to minify>
+* **Generate and train**: node app.js -g -t or make all
+* **Generate**: node app.js -g or make run-generate
+* **Train**: node app.js -t or make run-train
+* **Train**: node app.js -m <file to minify>
+
 Installation
 ============
 These installation instructions are intended for a Debian based OS, though they should apply to most UNIX based OSs.

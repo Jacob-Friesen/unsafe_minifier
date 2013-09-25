@@ -1,7 +1,21 @@
+# Follows target semantics from Mocha: https://github.com/visionmedia/mocha/blob/master/Makefile
 REPORTER = spec
 
 install:
 	bash install.sh
+
+.PHONY: install
+
+all: 
+	node app.js -g -t
+
+run-generate:
+	node app.js -g
+
+run-train:
+	node app.js -t
+
+.PHONY: all, run-generate, run-train
  
 test:
 	@NODE_ENV=test ./node_modules/.bin/mocha \
@@ -50,4 +64,4 @@ test-debug:
 test-d: test-debug
 
 
-.PHONY: install test test-watch test-integration test-all test-debug
+.PHONY: test test-watch test-integration test-all test-debug
